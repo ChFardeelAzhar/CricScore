@@ -1,3 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- App -->
     <string name="app_name">CricScore</string>
+    <string name="tagline">LIVE MATCH SCORER</string>
+    <string name="designed_for">Designed for gully cricket · No ads · No fluff</string>
+
+    <!-- Home -->
+    <string name="start_new_match">Start New Match</string>
+    <string name="recent_matches">Recent Matches</string>
+    <string name="continue_match">Continue Match</string>
+    <string name="no_recent_matches">No matches yet. Start your first match!</string>
+
+    <!-- Setup -->
+    <string name="match_setup">Match Setup</string>
+    <string name="step_n_of_m">Step %1$d of 3</string>
+    <string name="team_names">TEAM NAMES</string>
+    <string name="team_1_hint">Team 1 name</string>
+    <string name="team_2_hint">Team 2 name</string>
+    <string name="number_of_overs">NUMBER OF OVERS</string>
+    <string name="players_per_side">PLAYERS PER SIDE</string>
+    <string name="proceed_to_toss">Proceed to Toss →</string>
+    <string name="custom_overs">Custom</string>
+
+    <!-- Toss -->
+    <string name="coin_toss">Coin Toss</string>
+    <string name="who_calls">WHO CALLS?</string>
+    <string name="calls_label">%s CALLS...</string>
+    <string name="toss_result_won">%s won the toss</string>
+    <string name="toss_elected_to">and elected to %s</string>
+    <string name="elects_to">%s ELECTS TO...</string>
+    <string name="confirm_setup_innings">Confirm &amp; Setup Innings →</string>
+    <string name="heads">HEADS</string>
+    <string name="tails">TAILS</string>
+    <string name="bat">BAT</string>
+    <string name="bowl">BOWL</string>
+
+    <!-- Innings Setup -->
+    <string name="innings_setup">Innings Setup</string>
+    <string name="batting_label">BATTING</string>
+    <string name="bowling_label">BOWLING</string>
+    <string name="opening_batsmen">OPENING BATSMEN</string>
+    <string name="striker_facing_first">Striker (facing first)</string>
+    <string name="non_striker">Non-Striker</string>
+    <string name="opening_bowler">OPENING BOWLER</string>
+    <string name="add_players_optional">ADD PLAYERS (OPTIONAL)</string>
+    <string name="start_match">Start Match</string>
+
+    <!-- Scoring -->
+    <string name="live_innings_1">LIVE · 1ST INNINGS</string>
+    <string name="live_innings_2">LIVE · 2ND INNINGS</string>
+    <string name="overs_label">OVERS</string>
+    <string name="crr_label">CRR: %s</string>
+    <string name="striker_label">STRIKER</string>
+    <string name="on_strike_badge">⭐ ON STRIKE</string>
+    <string name="non_striker_label">NON-STRIKER</string>
+    <string name="sr_label">SR: %s</string>
+    <string name="bowler_label">BOWLER</string>
+    <string name="partnership_label">PARTNERSHIP</string>
+    <string name="runs_balls_format">%1$d (%2$d)</string>
+    <string name="extras_format">Wd %1$d   NB %2$d   B %3$d   LB %4$d</string>
+    <string name="wicket_out">WICKET — OUT</string>
+    <string name="undo">Undo</string>
+    <string name="switch_strike">Switch</string>
+
+    <!-- Chase -->
+    <string name="target_label">TARGET</string>
+    <string name="need_label">NEED</string>
+    <string name="in_n_balls">in %d balls</string>
+    <string name="rrr_label">RRR</string>
+    <string name="ahead_label">▲ AHEAD</string>
+    <string name="needed_label">▲ NEEDED</string>
+
+    <!-- Dismissal -->
+    <string name="wicket_title">WICKET! 🔴</string>
+    <string name="select_dismissal">Select dismissal type</string>
+    <string name="bowled">Bowled</string>
+    <string name="caught">Caught</string>
+    <string name="lbw">LBW</string>
+    <string name="run_out">Run Out</string>
+    <string name="stumped">Stumped</string>
+    <string name="hit_wicket">Hit Wicket</string>
+    <string name="retired_hurt">Retired Hurt / Out</string>
+    <string name="caught_by">CAUGHT BY (FIELDER NAME)</string>
+    <string name="fielder_hint">Fielder name...</string>
+    <string name="confirm_dismissal">Confirm Dismissal →</string>
+
+    <!-- Over Complete -->
+    <string name="end_of_over">End of Over %d</string>
+    <string name="select_next_bowler">SELECT NEXT BOWLER</string>
+    <string name="start_next_over">Start Over %d →</string>
+    <string name="just_bowled">JUST BOWLED</string>
+    <string name="over_summary">%1$d runs · %2$d wicket(s) this over</string>
+
+    <!-- Scorecard -->
+    <string name="innings_complete">INNINGS COMPLETE</string>
+    <string name="batting_table_header">BATTING</string>
+    <string name="bowling_table_header">BOWLING</string>
+    <string name="fall_of_wickets">FALL OF WICKETS</string>
+    <string name="target_set">TARGET SET</string>
+    <string name="team_needs_runs">%1$s need %2$d runs</string>
+    <string name="in_overs_rrr">in %1$d overs · RRR: %2$s</string>
+    <string name="start_2nd_innings">Start 2nd Innings →</string>
+
+    <!-- Result -->
+    <string name="match_result">MATCH RESULT</string>
+    <string name="won_by_runs">won by %d runs</string>
+    <string name="won_by_wickets">won by %d wickets</string>
+    <string name="match_tied">Match Tied!</string>
+    <string name="player_of_match">PLAYER OF THE MATCH</string>
+    <string name="new_match">New Match</string>
+    <string name="full_scorecard">Full Scorecard</string>
+    <string name="footer_tagline">CricScore · Local Cricket Scorer · No ads · No fluff</string>
 </resources>

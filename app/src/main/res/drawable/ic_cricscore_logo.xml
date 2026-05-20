@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="80dp"
+    android:height="80dp"
+    android:viewportWidth="80"
+    android:viewportHeight="80">
+    <!-- Cricket Bat -->
+    <path
+        android:fillColor="#4A90D9"
+        android:pathData="M22,60 L50,32 L56,38 L28,66 Z" />
+    <path
+        android:fillColor="#F5A623"
+        android:pathData="M52,30 L60,22 L64,26 L56,34 Z" />
+    <!-- Ball -->
+    <path
+        android:fillColor="#7ED321"
+        android:pathData="M62,52 A10,10 0 1 0 62,72 A10,10 0 1 0 62,52 Z" />
+    <!-- Ball Seam -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:pathData="M62,52 Q57,62 62,72" />
+</vector>

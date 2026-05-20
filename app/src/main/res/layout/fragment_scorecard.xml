@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground"
+    android:padding="16dp">
+
+    <!-- Header -->
+    <ImageButton
+        android:id="@+id/btn_back"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Back"
+        android:src="@drawable/ic_back_arrow"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/white" />
+
+    <TextView
+        android:id="@+id/tv_match_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="@style/TextAppearance.CricScore.ScoreSmall"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="@id/btn_back"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/btn_back"
+        app:layout_constraintTop_toTopOf="@id/btn_back"
+        tools:text="Pakistan vs India" />
+
+    <!-- Innings Switcher Tabs -->
+    <LinearLayout
+        android:id="@+id/ll_innings_tabs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/btn_back">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_innings_1"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="1st Innings"
+            android:textColor="@color/white"
+            app:strokeColor="@color/colorBorder"
+            app:cornerRadius="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_innings_2"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="2nd Innings"
+            android:textColor="@color/white"
+            app:strokeColor="@color/colorBorder"
+            app:cornerRadius="8dp" />
+
+    </LinearLayout>
+
+    <!-- Scrollable Scorecard Content -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toTopOf="@id/btn_start_second_innings"
+        app:layout_constraintTop_toBottomOf="@id/ll_innings_tabs">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Summary Card -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/cl_innings_summary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_card_surface"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/tv_innings_team"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.CricScore.Label"
+                    android:textColor="@color/colorPrimary"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:text="PAKISTAN INNINGS" />
+
+                <TextView
+                    android:id="@+id/tv_innings_runs_wickets"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textAppearance="@style/TextAppearance.CricScore.ScoreMedium"
+                    android:textColor="@color/white"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/tv_innings_team"
+                    tools:text="148 - 4" />
+
+                <TextView
+                    android:id="@+id/tv_innings_overs"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:textAppearance="@style/TextAppearance.CricScore.BodyLarge"
+                    android:textColor="@color/colorTextSecondary"
+                    app:layout_constraintBottom_toBottomOf="@id/tv_innings_runs_wickets"
+                    app:layout_constraintStart_toEndOf="@id/tv_innings_runs_wickets"
+                    tools:text="(15.0 overs)" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Batsmen Section Header -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:layout_marginStart="4dp"
+                android:text="BATTING"
+                android:textAppearance="@style/TextAppearance.CricScore.Label"
+                android:textColor="@color/colorTextSecondary" />
+
+            <!-- Batsmen Header Row Table -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:paddingVertical="4dp"
+                android:paddingHorizontal="12dp"
+                android:background="@color/colorSurface">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="Batsman"
+                    android:textAppearance="@style/TextAppearance.CricScore.Caption"
+                    android:textColor="@color/colorTextSecondary"
+                    app:layout_constraintEnd_toStartOf="@id/tv_h_runs"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tv_h_runs"
+                    android:layout_width="32dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="R"
+                    android:textAppearance="@style/TextAppearance.CricScore.Caption"
+                    android:textColor="@color/colorTextSecondary"
+                    app:layout_constraintEnd_toStartOf="@id/tv_h_balls"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tv_h_balls"
+                    android:layout_width="32dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="B"
+                    android:textAppearance="@style/TextAppearance.CricScore.Caption"
+                    android:textColor="@color/colorTextSecondary"
+                    app:layout_constraintEnd_toStartOf="@id/tv_h_fours"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tv_h_fours"
+                    android:layout_width="32dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="4s"
+                    android:textAppearance="@style/TextAppearance.CricScore.Caption"
+                    android:textColor="@color/colorTextSecondary"
+                    app:layout_constraintEnd_toStartOf="@id/tv_h_sixes"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tv_h_sixes"
+                    android:layout_width="32dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="6s"
+                    android:textAppearance="@style/TextAppearance.CricScore.Caption"
+                    android:textColor="@color/colorTextSecondary"
+                    app:layout_constraintEnd_toStartOf="@id/tv_h_sr"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tv_h_sr"
+                    android:layout_width="52dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:text="SR"
+                    android:textAppearance="@style/TextAppearance.CricScore.Caption"
+                    android:textColor="@color/colorTextSecondary"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Batsmen List RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_batsmen"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_scorecard_batsman" />
+
+            <!-- Extras Card -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/cl_extras"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_card_surface"
+                android:padding="12dp">
+
+                <TextView
+                    android:id="@+id/tv_extras_total"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.CricScore.BodyMedium"
+                    android:textColor="@color/white"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:text="Extras: 14" />
+
+                <TextView
+                    android:id="@+id/tv_extras_breakdown"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textAppearance="@style/TextAppearance.CricScore.Caption"
+                    android:textColor="@color/colorTextSecondary"
+                    app:layout_constraintBottom_toBottomOf="@id/tv_extras_total"
+                    app:layout_constraintStart_toEndOf="@id/tv_extras_total"
+                    app:layout_constraintTop_toTopOf="@id/tv_extras_total"
+                    tools:text="(wd 6, nb 2, b 4, lb 2)" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Bowlers Section Header -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:layout_marginStart="4dp"
+                android:text="BOWLING"
+                android:textAppearance="@style/TextAppearance.CricScore.Label"
+                android:textColor="@color/colorTextSecondary" />
+
+            <!-- Bowlers Header Row Table -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:paddingVertical="4dp"
+                android:paddingHorizontal="12dp"
+                android:background="@color/colorSurface">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="Bowler"
+                    android:textAppearance="@style/TextAppearance.CricScore.Caption"
+                    android:textColor="@color/colorTextSecondary"
+                    app:layout_constraintEnd_toStartOf="@id/tv_hb_overs"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tv_hb_overs"
+                    android:layout_width="32dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="O"
+                    android:textAppearance="@style/TextAppearance.CricScore.Caption"
+                    android:textColor="@color/colorTextSecondary"
+                    app:layout_constraintEnd_toStartOf="@id/tv_hb_maidens"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tv_hb_maidens"
+                    android:layout_width="32dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="M"
+                    android:textAppearance="@style/TextAppearance.CricScore.Caption"
+                    android:textColor="@color/colorTextSecondary"
+                    app:layout_constraintEnd_toStartOf="@id/tv_hb_runs"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tv_hb_runs"
+                    android:layout_width="32dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="R"
+                    android:textAppearance="@style/TextAppearance.CricScore.Caption"
+                    android:textColor="@color/colorTextSecondary"
+                    app:layout_constraintEnd_toStartOf="@id/tv_hb_wickets"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tv_hb_wickets"
+                    android:layout_width="32dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="W"
+                    android:textAppearance="@style/TextAppearance.CricScore.Caption"
+                    android:textColor="@color/colorTextSecondary"
+                    app:layout_constraintEnd_toStartOf="@id/tv_hb_econ"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tv_hb_econ"
+                    android:layout_width="52dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:text="Econ"
+                    android:textAppearance="@style/TextAppearance.CricScore.Caption"
+                    android:textColor="@color/colorTextSecondary"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Bowlers List RecyclerView -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_bowlers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_scorecard_bowler" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Start 2nd Innings CTA Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_start_second_innings"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:backgroundTint="@color/colorPrimary"
+        android:text="Start 2nd Innings"
+        android:textAppearance="@style/TextAppearance.CricScore.Button"
+        android:textColor="@color/black"
+        android:visibility="gone"
+        app:cornerRadius="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:visibility="visible" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

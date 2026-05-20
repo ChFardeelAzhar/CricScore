@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="180dp"
+    android:height="180dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <!-- Outer gold ring -->
+    <path
+        android:fillColor="#F5A623"
+        android:pathData="M50,50m-45,0a45,45 0,1 1,90 0a45,45 0,1 1,-90 0" />
+    <!-- Inner gold circle -->
+    <path
+        android:fillColor="#D88B0E"
+        android:pathData="M50,50m-38,0a38,38 0,1 1,76 0a38,38 0,1 1,-76 0" />
+    <!-- T letter -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M35,30 H65 V38 H54 V70 H46 V38 H35 Z" />
+</vector>

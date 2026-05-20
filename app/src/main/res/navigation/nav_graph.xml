@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/home_fragment">
+
+    <fragment
+        android:id="@+id/home_fragment"
+        android:name="com.cricscore.app.ui.home.HomeFragment"
+        android:label="HomeFragment"
+        tools:layout="@layout/fragment_home">
+        <action
+            android:id="@+id/action_home_to_match_setup"
+            app:destination="@id/match_setup_fragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@android:anim/slide_in_left"
+            app:popExitAnim="@android:anim/slide_out_right" />
+        <action
+            android:id="@+id/action_home_to_scorecard"
+            app:destination="@id/scorecard_fragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@android:anim/slide_in_left"
+            app:popExitAnim="@android:anim/slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/match_setup_fragment"
+        android:name="com.cricscore.app.ui.setup.MatchSetupFragment"
+        android:label="MatchSetupFragment"
+        tools:layout="@layout/fragment_match_setup">
+        <action
+            android:id="@+id/action_match_setup_to_toss"
+            app:destination="@id/toss_fragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@android:anim/slide_in_left"
+            app:popExitAnim="@android:anim/slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/toss_fragment"
+        android:name="com.cricscore.app.ui.toss.TossFragment"
+        android:label="TossFragment"
+        tools:layout="@layout/fragment_toss">
+        <argument
+            android:name="matchId"
+            app:argType="long" />
+        <action
+            android:id="@+id/action_toss_to_innings_setup"
+            app:destination="@id/innings_setup_fragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@android:anim/slide_in_left"
+            app:popExitAnim="@android:anim/slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/innings_setup_fragment"
+        android:name="com.cricscore.app.ui.inningssetup.InningsSetupFragment"
+        android:label="InningsSetupFragment"
+        tools:layout="@layout/fragment_innings_setup">
+        <argument
+            android:name="matchId"
+            app:argType="long" />
+        <argument
+            android:name="inningsNumber"
+            app:argType="integer" />
+        <action
+            android:id="@+id/action_innings_setup_to_scoring"
+            app:destination="@id/scoring_fragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@android:anim/slide_in_left"
+            app:popExitAnim="@android:anim/slide_out_right"
+            app:popUpTo="@id/home_fragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/scoring_fragment"
+        android:name="com.cricscore.app.ui.scoring.ScoringFragment"
+        android:label="ScoringFragment"
+        tools:layout="@layout/fragment_scoring">
+        <argument
+            android:name="matchId"
+            app:argType="long" />
+        <argument
+            android:name="inningsNumber"
+            app:argType="integer" />
+        <action
+            android:id="@+id/action_scoring_to_scorecard"
+            app:destination="@id/scorecard_fragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@android:anim/slide_in_left"
+            app:popExitAnim="@android:anim/slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/scorecard_fragment"
+        android:name="com.cricscore.app.ui.scorecard.ScorecardFragment"
+        android:label="ScorecardFragment"
+        tools:layout="@layout/fragment_scorecard">
+        <argument
+            android:name="matchId"
+            app:argType="long" />
+        <argument
+            android:name="inningsNumber"
+            app:argType="integer" />
+        <argument
+            android:name="showStartNext"
+            app:argType="boolean"
+            android:defaultValue="false" />
+        <action
+            android:id="@+id/action_scorecard_to_scoring"
+            app:destination="@id/scoring_fragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@android:anim/slide_in_left"
+            app:popExitAnim="@android:anim/slide_out_right"
+            app:popUpTo="@id/home_fragment" />
+        <action
+            android:id="@+id/action_scorecard_to_result"
+            app:destination="@id/result_fragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@android:anim/slide_in_left"
+            app:popExitAnim="@android:anim/slide_out_right"
+            app:popUpTo="@id/home_fragment" />
+        <action
+            android:id="@+id/action_scorecard_to_innings_setup"
+            app:destination="@id/innings_setup_fragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@android:anim/slide_in_left"
+            app:popExitAnim="@android:anim/slide_out_right" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/result_fragment"
+        android:name="com.cricscore.app.ui.result.ResultFragment"
+        android:label="ResultFragment"
+        tools:layout="@layout/fragment_result">
+        <argument
+            android:name="matchId"
+            app:argType="long" />
+        <action
+            android:id="@+id/action_result_to_home"
+            app:destination="@id/home_fragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popUpTo="@id/home_fragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+</navigation>
