@@ -76,7 +76,7 @@ fun ScoringScreen(
     val currentStriker by viewModel.currentStriker.collectAsStateWithLifecycle()
     val currentNonStriker by viewModel.currentNonStriker.collectAsStateWithLifecycle()
     val currentBowler by viewModel.currentBowler.collectAsStateWithLifecycle()
-    val thisOverBalls by viewModel.thisOverBalls.collectAsStateWithLifecycle()
+    val balls by viewModel.balls.collectAsStateWithLifecycle()
     val firstInningsRuns by viewModel.firstInningsRuns.collectAsStateWithLifecycle()
 
     // Overlay dialog triggers
@@ -101,12 +101,28 @@ fun ScoringScreen(
         }
     }
 
-    // Reactively compute if over is complete & prompt next bowler selection
+    // Determine the active over's balls
+    val lastBall = balls.lastOrNull()
+    val lastBallOverNo = lastBall?.overNumber ?: 0
+    val legalInLastOver = lastBall?.let { last -> balls.filter { it.overNumber == last.overNumber && OversHelper.isLegalBall(it.ballType) }.size } ?: 0
+    val isLastOverComplete = legalInLastOver == 6
+    val isNextBowlerSelected = isLastOverComplete && (
+        lastPromptedOverNumber == lastBallOverNo || 
+        (currentBowler != null && currentBowler?.playerName != lastBall?.bowlerName)
+    )
+
+    val currentOverNumber = lastBallOverNo
+    val thisOverBalls = remember(balls, isNextBowlerSelected, lastBallOverNo) {
+        if (isNextBowlerSelected) {
+            emptyList<Ball>()
+        } else {
+            balls.filter { it.overNumber == lastBallOverNo }
+        }
+    }
     val legalBallsInOver = thisOverBalls.filter { OversHelper.isLegalBall(it.ballType) }.size
-    val currentOverNumber = if (thisOverBalls.isNotEmpty()) thisOverBalls.last().overNumber else -1
-    
-    LaunchedEffect(key1 = legalBallsInOver, key2 = currentOverNumber) {
-        if (legalBallsInOver == 6 && lastPromptedOverNumber != currentOverNumber) {
+
+    LaunchedEffect(key1 = isLastOverComplete, key2 = isNextBowlerSelected) {
+        if (isLastOverComplete && !isNextBowlerSelected) {
             showOverCompleteSheet = true
         }
     }
@@ -663,7 +679,11 @@ fun ScoringScreen(
         val nextOverNumber = currentOverNumber + 1
         ModalBottomSheet(
             onDismissRequest = { /* Force bowler selection, cannot dismiss */ },
-            sheetState = rememberModalBottomSheetState(confirmValueChange = { false }), // Disable swipe to dismiss
+            sheetState = rememberModalBottomSheetState(
+                confirmValueChange = { targetValue ->
+                    targetValue != SheetValue.Hidden
+                }
+            ),
             dragHandle = null,
             containerColor = MaterialTheme.colorScheme.surface
         ) {
