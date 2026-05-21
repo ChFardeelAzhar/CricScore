@@ -1,8 +1,11 @@
 package com.cricscore.app.ui.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,6 +15,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,46 +51,43 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp)
+                .padding(top = 50.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-            
             // Header CricScore Branding
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_cricscore_logo),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(36.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Column {
-                    Text(
-                        text = stringResource(id = R.string.app_name),
-                        fontFamily = BarlowCondensed,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 28.sp,
-                        color = MaterialTheme.colorScheme.onBackground
+
+            Image(
+                painter = painterResource(R.drawable.app_icon),
+                contentDescription = "app_logo",
+                modifier = Modifier
+                    .size(80.dp)
+                    .shadow(
+                        elevation = 8.dp,
+                        shape = RoundedCornerShape(16.dp),
+                        ambientColor = Color.Yellow,
+                        spotColor = Color.Yellow
                     )
-                    Text(
-                        text = stringResource(id = R.string.tagline),
-                        fontFamily = DMSans,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.sp,
-                        letterSpacing = 1.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = stringResource(id = R.string.designed_for),
-                style = MaterialTheme.typography.bodySmall,
-                color = TextGray
             )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(id = R.string.app_name),
+                fontFamily = BarlowCondensed,
+                fontWeight = FontWeight.Bold,
+                fontSize = 28.sp,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(Modifier.height(8.dp))
+
+            Text(
+                text = stringResource(id = R.string.tagline),
+                fontFamily = DMSans,
+                fontWeight = FontWeight.Bold,
+                fontSize = 10.sp,
+                letterSpacing = 1.sp,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -101,12 +103,6 @@ fun HomeScreen(
                     contentColor = NavyDark
                 )
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_play),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = stringResource(id = R.string.start_new_match),
                     fontFamily = DMSans,
@@ -119,7 +115,11 @@ fun HomeScreen(
             activeMatch?.let { match ->
                 Spacer(modifier = Modifier.height(20.dp))
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondary.copy(
+                            alpha = 0.15f
+                        )
+                    ),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -163,30 +163,59 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(28.dp))
 
             // Recent Matches Section
-            Text(
-                text = stringResource(id = R.string.recent_matches),
-                fontFamily = BarlowCondensed,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                color = TextGray
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(width = 0.5.dp, Color.Gray, shape = RoundedCornerShape(12.dp))
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_recent_matches),
+                        contentDescription = null,
+                        tint = Color.Gray,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(id = R.string.recent_matches),
+                        fontFamily = BarlowCondensed,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = TextGray
+                    )
+                }
+
+            }
+
 
             Spacer(modifier = Modifier.height(12.dp))
 
             if (recentMatches.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.no_recent_matches),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextGray,
-                        textAlign = TextAlign.Center
-                    )
-                }
+
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_bat_bowl),
+                            contentDescription = null,
+                            modifier = Modifier.size(60.dp)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(id = R.string.no_recent_matches),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = TextGray,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+
             } else {
                 LazyColumn(
                     modifier = Modifier.weight(1f),
@@ -243,11 +272,19 @@ fun RecentMatchItem(
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             val (statusText, statusColor) = when (match.status) {
                 MatchStatus.UPCOMING -> Pair("Toss Pending", MaterialTheme.colorScheme.primary)
-                MatchStatus.FIRST_INNINGS -> Pair("Live · 1st Innings in progress", MaterialTheme.colorScheme.primary)
-                MatchStatus.SECOND_INNINGS -> Pair("Live · 2nd Innings in progress", MaterialTheme.colorScheme.primary)
+                MatchStatus.FIRST_INNINGS -> Pair(
+                    "Live · 1st Innings in progress",
+                    MaterialTheme.colorScheme.primary
+                )
+
+                MatchStatus.SECOND_INNINGS -> Pair(
+                    "Live · 2nd Innings in progress",
+                    MaterialTheme.colorScheme.primary
+                )
+
                 MatchStatus.COMPLETED -> {
                     val result = if (match.isTied) {
                         "Match Tied"
