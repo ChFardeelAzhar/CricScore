@@ -718,7 +718,7 @@ fun ScoringScreen(
                 
                 Text(
                     text = "SELECT NEXT BOWLER",
-                    fontFamily = BarlowCondensed,
+                    fontFamily = DMSans,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
                     color = TextGray
@@ -760,7 +760,7 @@ fun ScoringScreen(
                     )
                 ) {
                     Text(
-                        text = "Start Over $nextOverNumber →",
+                        text = "Start Over $nextOverNumber",
                         fontFamily = DMSans,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
@@ -811,7 +811,7 @@ fun ScoringScreen(
                 // Dismissed Player Selector
                 Text(
                     text = "WHO IS OUT?",
-                    fontFamily = BarlowCondensed,
+                    fontFamily = DMSans,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
                     color = TextGray
@@ -851,7 +851,7 @@ fun ScoringScreen(
                 // Dismissed Type (Exposed Dropdown replacement)
                 Text(
                     text = "DISMISSAL TYPE",
-                    fontFamily = BarlowCondensed,
+                    fontFamily = DMSans,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
                     color = TextGray
@@ -898,7 +898,7 @@ fun ScoringScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "FIELDER NAME",
-                        fontFamily = BarlowCondensed,
+                        fontFamily = DMSans,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
                         color = TextGray
@@ -921,7 +921,7 @@ fun ScoringScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "NEXT BATSMAN",
-                        fontFamily = BarlowCondensed,
+                        fontFamily = DMSans,
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
                         color = TextGray
@@ -994,7 +994,7 @@ fun ScoringScreen(
                     )
                 ) {
                     Text(
-                        text = "Confirm Dismissal →",
+                        text = "Confirm Dismissal",
                         fontFamily = DMSans,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp

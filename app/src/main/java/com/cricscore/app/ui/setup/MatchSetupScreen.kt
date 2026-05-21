@@ -44,7 +44,7 @@ fun MatchSetupScreen(
     var overs by remember { mutableStateOf("5") }
     var players by remember { mutableStateOf("11") }
 
-    val standardOvers = listOf("2", "5", "10", "20")
+    val standardOvers = listOf("5", "6", "10", "20")
 
     LaunchedEffect(key1 = viewModel) {
         viewModel.setupEvent.collectLatest { event ->
@@ -72,7 +72,7 @@ fun MatchSetupScreen(
                         text = stringResource(id = R.string.match_setup),
                         fontFamily = BarlowCondensed,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp
+                        fontSize = 26.sp
                     )
                 },
                 navigationIcon = {
@@ -95,24 +95,13 @@ fun MatchSetupScreen(
                 .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Step counter
-            Text(
-                text = stringResource(id = R.string.step_n_of_m, 1),
-                fontFamily = DMSans,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.primary,
-                letterSpacing = 0.5.sp
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
 
             // TEAM NAMES SECTION
             Text(
                 text = stringResource(id = R.string.team_names),
-                fontFamily = BarlowCondensed,
+//                fontFamily = BarlowCondensed,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 color = TextGray
@@ -148,12 +137,12 @@ fun MatchSetupScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(36.dp))
 
             // OVERS LIMIT SECTION
             Text(
                 text = stringResource(id = R.string.number_of_overs),
-                fontFamily = BarlowCondensed,
+//                fontFamily = BarlowCondensed,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 color = TextGray
@@ -210,12 +199,12 @@ fun MatchSetupScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(36.dp))
 
             // PLAYERS COUNT SECTION
             Text(
                 text = stringResource(id = R.string.players_per_side),
-                fontFamily = BarlowCondensed,
+//                fontFamily = BarlowCondensed,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 color = TextGray

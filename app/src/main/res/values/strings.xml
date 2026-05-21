@@ -19,7 +19,7 @@
     <string name="team_2_hint">Team 2 name</string>
     <string name="number_of_overs">NUMBER OF OVERS</string>
     <string name="players_per_side">PLAYERS PER SIDE</string>
-    <string name="proceed_to_toss">Proceed to Toss →</string>
+    <string name="proceed_to_toss">Proceed to Toss</string>
     <string name="custom_overs">Custom</string>
 
     <!-- Toss -->

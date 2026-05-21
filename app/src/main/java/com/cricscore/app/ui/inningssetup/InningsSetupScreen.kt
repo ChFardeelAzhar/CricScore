@@ -76,7 +76,7 @@ fun InningsSetupScreen(
                         text = stringResource(id = R.string.innings_setup),
                         fontFamily = BarlowCondensed,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp
+                        fontSize = 26.sp
                     )
                 },
                 navigationIcon = {
@@ -101,17 +101,6 @@ fun InningsSetupScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Step counter
-            Text(
-                text = stringResource(id = R.string.step_n_of_m, 3),
-                fontFamily = DMSans,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.primary,
-                letterSpacing = 0.5.sp
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
 
             setupState?.let { state ->
                 // Batting and Bowling Teams banner
@@ -133,7 +122,7 @@ fun InningsSetupScreen(
                                 text = stringResource(id = R.string.batting_label),
                                 fontFamily = DMSans,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp,
+                                fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Spacer(modifier = Modifier.height(4.dp))
@@ -141,7 +130,7 @@ fun InningsSetupScreen(
                                 text = state.battingTeam,
                                 fontFamily = DMSans,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
+                                fontSize = 20.sp,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -151,7 +140,7 @@ fun InningsSetupScreen(
                             text = "vs",
                             fontFamily = BarlowCondensed,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
+                            fontSize = 20.sp,
                             color = TextGray
                         )
 
@@ -160,7 +149,7 @@ fun InningsSetupScreen(
                                 text = stringResource(id = R.string.bowling_label),
                                 fontFamily = DMSans,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp,
+                                fontSize = 14.sp,
                                 color = TextGray
                             )
                             Spacer(modifier = Modifier.height(4.dp))
@@ -168,7 +157,7 @@ fun InningsSetupScreen(
                                 text = state.bowlingTeam,
                                 fontFamily = DMSans,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
+                                fontSize = 20.sp,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -181,7 +170,7 @@ fun InningsSetupScreen(
             // OPENING BATSMEN
             Text(
                 text = stringResource(id = R.string.opening_batsmen),
-                fontFamily = BarlowCondensed,
+                fontFamily = DMSans,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 color = TextGray
@@ -222,7 +211,7 @@ fun InningsSetupScreen(
             // OPENING BOWLER
             Text(
                 text = stringResource(id = R.string.opening_bowler),
-                fontFamily = BarlowCondensed,
+                fontFamily = DMSans,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp,
                 color = TextGray

@@ -3,6 +3,7 @@ package com.cricscore.app.ui.toss
 import android.widget.Toast
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,11 +18,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,7 +56,6 @@ fun TossScreen(
     var tossDecisionState by remember { mutableStateOf<TossResult?>(null) }
     
     var coinImageRes by remember { mutableStateOf(R.drawable.ic_coin_heads) }
-    var coinFlipResultText by remember { mutableStateOf("") }
     
     // Animation properties
     val rotationY = remember { Animatable(0f) }
@@ -97,7 +99,6 @@ fun TossScreen(
             match?.let { matchVal ->
                 val wonTeam = if (random.nextBoolean()) matchVal.team1 else matchVal.team2
                 tossWinnerState = wonTeam
-                coinFlipResultText = "Result: ${if (isHeads) "Heads" else "Tails"} — $wonTeam won the toss"
             }
             
             isFlipping = false
@@ -114,7 +115,7 @@ fun TossScreen(
                         text = stringResource(id = R.string.coin_toss),
                         fontFamily = BarlowCondensed,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 24.sp
+                        fontSize = 26.sp
                     )
                 },
                 navigationIcon = {
@@ -137,26 +138,13 @@ fun TossScreen(
                 .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Step counter
-            Text(
-                text = stringResource(id = R.string.step_n_of_m, 2),
-                fontFamily = DMSans,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.primary,
-                letterSpacing = 0.5.sp
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
 
             // Coin Graphics & Flip Area
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp),
-                contentAlignment = Alignment.Center
+                    .height(180.dp),
+                contentAlignment = Alignment.BottomCenter
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -170,37 +158,22 @@ fun TossScreen(
                                 this.scaleX = scale.value
                                 this.scaleY = scale.value
                             }
-                            .size(100.dp)
+                            .size(135.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.surface)
-                            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                        ,
                         contentAlignment = Alignment.Center
                     ) {
                         Image(
                             painter = painterResource(id = coinImageRes),
                             contentDescription = "Coin",
-                            modifier = Modifier.size(92.dp)
+                            modifier = Modifier.size(130.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Toss Result Text
-            if (coinFlipResultText.isNotEmpty()) {
-                Text(
-                    text = coinFlipResultText,
-                    fontFamily = DMSans,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(8.dp))
 
             // Flip Coin Button
             Button(
@@ -208,31 +181,104 @@ fun TossScreen(
                 enabled = !isFlipping,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .width(180.dp)
                     .height(48.dp),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = MaterialTheme.colorScheme.primary
                 ),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
             ) {
                 Text(
                     text = "Flip Coin 🪙",
                     fontFamily = DMSans,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
+                    fontSize = 16.sp
                 )
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Toss Result Card
+            if (tossWinnerState.isNotEmpty()) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFF111810),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(text = "🎉", fontSize = 14.sp)
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "TOSS RESULT",
+                                fontFamily = DMSans,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.primary,
+                                letterSpacing = 1.2.sp
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "$tossWinnerState won the toss",
+                            fontFamily = DMSans,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp,
+                            color = Color.White,
+                            textAlign = TextAlign.Center
+                        )
+
+                        if (tossDecisionState != null) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "and elected to ",
+                                    fontFamily = DMSans,
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = 15.sp,
+                                    color = TextGray
+                                )
+                                Text(
+                                    text = if (tossDecisionState == TossResult.BAT)
+                                        stringResource(id = R.string.bat).uppercase()
+                                    else
+                                        stringResource(id = R.string.bowl).uppercase(),
+                                    fontFamily = DMSans,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+
 
             // Radio Groups replacement (Toss winner & decision selection cards)
             match?.let { matchVal ->
                 // Who Won The Toss
                 Text(
                     text = stringResource(id = R.string.who_calls),
-                    fontFamily = BarlowCondensed,
+                    fontFamily = DMSans,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = TextGray
@@ -276,7 +322,7 @@ fun TossScreen(
                     } else {
                         "DECISION"
                     },
-                    fontFamily = BarlowCondensed,
+                    fontFamily = DMSans,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = TextGray
