@@ -143,6 +143,37 @@ class RecordBallUseCaseTest {
         assertEquals("New Batsman", nextBall.strikerName)
     }
 
+    @Test
+    fun testRecordBallWithExplicitBowlerName() = runBlocking {
+        // Record 1st over (6 legal balls) with the default bowler
+        for (i in 1..6) {
+            recordBallUseCase(
+                matchId = matchId,
+                inningsNumber = inningsNumber,
+                runsBatsman = 0,
+                runsExtra = 0,
+                ballType = BallType.NORMAL
+            )
+        }
+
+        // Now record the next ball of the new over with an explicitly selected bowler "NewBowler"
+        val ball = recordBallUseCase(
+            matchId = matchId,
+            inningsNumber = inningsNumber,
+            runsBatsman = 1,
+            runsExtra = 0,
+            ballType = BallType.NORMAL,
+            bowlerName = "NewBowler"
+        )
+
+        assertEquals("NewBowler", ball.bowlerName)
+
+        val bowler = inningsRepository.getBowlerSync(matchId, inningsNumber, "NewBowler")
+        assertNotNull(bowler)
+        assertEquals(1, bowler!!.ballsBowled)
+        assertEquals(1, bowler.runsConceded)
+    }
+
     // --- Fake Repositories ---
 
     class FakeMatchRepository : MatchRepository {
