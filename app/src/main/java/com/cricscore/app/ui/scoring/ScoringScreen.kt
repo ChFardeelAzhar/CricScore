@@ -76,15 +76,16 @@ fun ScoringScreen(
     val currentStriker by viewModel.currentStriker.collectAsStateWithLifecycle()
     val currentNonStriker by viewModel.currentNonStriker.collectAsStateWithLifecycle()
     val currentBowler by viewModel.currentBowler.collectAsStateWithLifecycle()
+    val bowlers by viewModel.bowlers.collectAsStateWithLifecycle()
     val balls by viewModel.balls.collectAsStateWithLifecycle()
     val firstInningsRuns by viewModel.firstInningsRuns.collectAsStateWithLifecycle()
 
+    val thisOverBalls by viewModel.thisOverBalls.collectAsStateWithLifecycle()
+    val buttonsEnabled by viewModel.scoringButtonsEnabled.collectAsStateWithLifecycle()
+
     // Overlay dialog triggers
     var showDismissalSheet by remember { mutableStateOf(false) }
-    var showOverCompleteSheet by remember { mutableStateOf(false) }
     var showExtrasDialogType by remember { mutableStateOf<BallType?>(null) }
-    
-    var lastPromptedOverNumber by remember { mutableStateOf(-1) }
     var hasNavigatedCompletion by remember { mutableStateOf(false) }
 
     // Wicket Shake Animation
@@ -103,29 +104,11 @@ fun ScoringScreen(
 
     // Determine the active over's balls
     val lastBall = balls.lastOrNull()
-    val lastBallOverNo = lastBall?.overNumber ?: 0
+    val currentOverNumber = lastBall?.overNumber ?: 0
     val legalInLastOver = lastBall?.let { last -> balls.filter { it.overNumber == last.overNumber && OversHelper.isLegalBall(it.ballType) }.size } ?: 0
     val isLastOverComplete = legalInLastOver == 6
-    val isNextBowlerSelected = isLastOverComplete && (
-        lastPromptedOverNumber == lastBallOverNo || 
-        (currentBowler != null && currentBowler?.playerName != lastBall?.bowlerName)
-    )
 
-    val currentOverNumber = lastBallOverNo
-    val thisOverBalls = remember(balls, isNextBowlerSelected, lastBallOverNo) {
-        if (isNextBowlerSelected) {
-            emptyList<Ball>()
-        } else {
-            balls.filter { it.overNumber == lastBallOverNo }
-        }
-    }
-    val legalBallsInOver = thisOverBalls.filter { OversHelper.isLegalBall(it.ballType) }.size
-
-    LaunchedEffect(key1 = isLastOverComplete, key2 = isNextBowlerSelected) {
-        if (isLastOverComplete && !isNextBowlerSelected) {
-            showOverCompleteSheet = true
-        }
-    }
+    val showOverCompleteSheet = isLastOverComplete && currentBowler == null && innings?.isCompleted == false && match?.status != MatchStatus.COMPLETED
 
     // Reactively compute match/innings completion
     LaunchedEffect(key1 = innings, key2 = match, key3 = firstInningsRuns) {
@@ -168,8 +151,6 @@ fun ScoringScreen(
             }
         }
     }
-
-    val buttonsEnabled = legalBallsInOver < 6
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -677,6 +658,9 @@ fun ScoringScreen(
     // Modal Bottom Sheet: Over Complete
     if (showOverCompleteSheet) {
         val nextOverNumber = currentOverNumber + 1
+        val lastBall = balls.lastOrNull()
+        val lastBowlerName = lastBall?.bowlerName
+
         ModalBottomSheet(
             onDismissRequest = { /* Force bowler selection, cannot dismiss */ },
             sheetState = rememberModalBottomSheetState(
@@ -688,39 +672,156 @@ fun ScoringScreen(
             containerColor = MaterialTheme.colorScheme.surface
         ) {
             var bowlerName by remember { mutableStateOf("") }
+            
+            // Check if bowlerName matches any recent bowler name (excluding the one who just bowled)
+            val selectedBowler = remember(bowlerName, bowlers, lastBowlerName) {
+                val typed = bowlerName.trim()
+                if (typed.isEmpty()) null
+                else bowlers.firstOrNull { 
+                    it.playerName.equals(typed, ignoreCase = true) && !it.playerName.equals(lastBowlerName, ignoreCase = true) 
+                }
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
                     .padding(24.dp)
                     .imePadding()
             ) {
+                // Header Area
                 Text(
                     text = "End of Over $currentOverNumber",
                     fontFamily = BarlowCondensed,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                
-                // Calculate over summary runs & wickets
-                val lastOverBalls = thisOverBalls.filter { it.overNumber == currentOverNumber }
-                val overRuns = lastOverBalls.sumOf { it.runsBatsman + it.runsExtra }
-                val overWickets = lastOverBalls.count { it.isWicket }
-                Text(
-                    text = "$overRuns runs · $overWickets wicket(s) this over",
-                    fontFamily = DMSans,
-                    fontSize = 14.sp,
-                    color = TextGray
+                    fontSize = 24.sp,
+                    color = LimeAccent
                 )
                 
-                Spacer(modifier = Modifier.height(20.dp))
-                
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Scoreboard Banner inside the sheet
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = NavyDark),
+                    border = BorderStroke(1.dp, BorderGray)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "TOTAL SCORE",
+                                fontFamily = DMSans,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp,
+                                color = TextGray
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "${innings?.totalRuns ?: 0} - ${innings?.totalWickets ?: 0}",
+                                fontFamily = BarlowCondensed,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 28.sp,
+                                color = TextWhite
+                            )
+                        }
+                        
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "OVERS",
+                                fontFamily = DMSans,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp,
+                                color = TextGray
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = CricketCalculator.ballsToOversString(innings?.ballsBowled ?: 0),
+                                fontFamily = BarlowCondensed,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 28.sp,
+                                color = TextWhite
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Completed Over Balls Row
                 Text(
-                    text = "SELECT NEXT BOWLER",
+                    text = "BALLS THIS OVER",
                     fontFamily = DMSans,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
+                    color = TextGray
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (thisOverBalls.isEmpty()) {
+                        Text(
+                            text = "No balls in this over",
+                            fontFamily = DMSans,
+                            fontSize = 14.sp,
+                            color = TextGray
+                        )
+                    } else {
+                        thisOverBalls.forEach { ball ->
+                            BallIndicator(ball = ball)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Recent Bowlers list
+                if (bowlers.isNotEmpty()) {
+                    Text(
+                        text = "RECENT BOWLERS",
+                        fontFamily = DMSans,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = TextGray
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        bowlers.forEach { bowler ->
+                            val isJustBowled = bowler.playerName.equals(lastBowlerName, ignoreCase = true)
+                            val isSelected = selectedBowler?.playerName == bowler.playerName
+                            
+                            RecentBowlerCard(
+                                bowler = bowler,
+                                isJustBowled = isJustBowled,
+                                isSelected = isSelected,
+                                onClick = {
+                                    bowlerName = bowler.playerName
+                                }
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
+                // Input Field for Bowler Name
+                Text(
+                    text = "ENTER NEXT BOWLER",
+                    fontFamily = DMSans,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
                     color = TextGray
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -728,17 +829,21 @@ fun ScoringScreen(
                 OutlinedTextField(
                     value = bowlerName,
                     onValueChange = { bowlerName = it },
-                    placeholder = { Text("Next bowler name...") },
+                    placeholder = { Text("Enter bowler name...", color = TextGray) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = BorderGray
+                        focusedTextColor = TextWhite,
+                        unfocusedTextColor = TextWhite,
+                        focusedBorderColor = LimeAccent,
+                        unfocusedBorderColor = BorderGray,
+                        cursorColor = LimeAccent
                     )
                 )
-                
+
                 Spacer(modifier = Modifier.height(24.dp))
-                
+
+                // Submit Button
                 Button(
                     onClick = {
                         val name = bowlerName.trim()
@@ -746,16 +851,18 @@ fun ScoringScreen(
                             Toast.makeText(context, "Bowler name cannot be empty", Toast.LENGTH_SHORT).show()
                             return@Button
                         }
+                        if (name.equals(lastBowlerName, ignoreCase = true)) {
+                            Toast.makeText(context, "The same bowler cannot bowl consecutive overs", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
                         viewModel.selectNextBowler(name)
-                        lastPromptedOverNumber = currentOverNumber
-                        showOverCompleteSheet = false
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
+                        containerColor = LimeAccent,
                         contentColor = NavyDark
                     )
                 ) {
@@ -766,6 +873,7 @@ fun ScoringScreen(
                         fontSize = 14.sp
                     )
                 }
+                
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
@@ -1172,5 +1280,92 @@ fun BallIndicator(ball: Ball) {
             fontSize = 11.sp,
             color = tc
         )
+    }
+}
+
+@Composable
+fun RecentBowlerCard(
+    bowler: BowlerInnings,
+    isJustBowled: Boolean,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = !isJustBowled, onClick = onClick)
+            .border(
+                border = BorderStroke(
+                    width = if (isSelected) 2.dp else 1.dp,
+                    color = if (isSelected) LimeAccent else BorderGray
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) NavySurface else NavySurface.copy(alpha = 0.6f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = bowler.playerName,
+                        fontFamily = DMSans,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = if (isJustBowled) TextGray else MaterialTheme.colorScheme.onSurface
+                    )
+                    if (isJustBowled) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(BorderGray)
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "JUST BOWLED",
+                                fontFamily = DMSans,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 8.sp,
+                                color = TextGray
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                val statsStr = "${CricketCalculator.ballsToOversString(bowler.ballsBowled)}-${bowler.maidens}-${bowler.runsConceded}-${bowler.wickets}"
+                Text(
+                    text = "Stats: $statsStr",
+                    fontFamily = DMSans,
+                    fontSize = 12.sp,
+                    color = TextGray
+                )
+            }
+            
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (isSelected) LimeAccent.copy(alpha = 0.15f) else BorderGray.copy(alpha = 0.5f))
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "${CricketCalculator.ballsToOversString(bowler.ballsBowled)} O  ·  ${bowler.wickets} W",
+                        fontFamily = DMSans,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 11.sp,
+                        color = if (isSelected) LimeAccent else TextGray
+                    )
+                }
+            }
+        }
     }
 }

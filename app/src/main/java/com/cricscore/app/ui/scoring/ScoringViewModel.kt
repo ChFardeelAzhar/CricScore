@@ -81,7 +81,14 @@ class ScoringViewModel @Inject constructor(
         active.firstOrNull { it.playerName != strikerName }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val currentBowler: StateFlow<BowlerInnings?> = combine(balls, bowlers) { ballList, bowlerList ->
+    // Keep track of the bowler explicitly selected for the upcoming over before any ball is recorded.
+    private val _selectedBowlerForNewOver = MutableStateFlow<BowlerInnings?>(null)
+
+    val currentBowler: StateFlow<BowlerInnings?> = combine(
+        balls,
+        bowlers,
+        _selectedBowlerForNewOver
+    ) { ballList, bowlerList, selectedBowler ->
         if (bowlerList.isEmpty()) return@combine null
         if (ballList.isEmpty()) {
             bowlerList.firstOrNull()
@@ -89,24 +96,55 @@ class ScoringViewModel @Inject constructor(
             val lastBall = ballList.last()
             val legalInLastOver = ballList.filter { it.overNumber == lastBall.overNumber && OversHelper.isLegalBall(it.ballType) }.size
             if (legalInLastOver == 6) {
-                val lastBowler = lastBall.bowlerName
-                bowlerList.firstOrNull { it.playerName != lastBowler && it.ballsBowled % 6 != 0 } 
-                    ?: bowlerList.firstOrNull { it.playerName != lastBowler } 
-                    ?: bowlerList.firstOrNull()
+                selectedBowler
             } else {
                 bowlerList.firstOrNull { it.playerName == lastBall.bowlerName }
             }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val thisOverBalls: StateFlow<List<Ball>> = combine(balls, innings) { ballList, inn ->
-        if (ballList.isEmpty() || inn == null) return@combine emptyList()
-        val last = ballList.last()
-        val legalCount = ballList.filter { it.overNumber == last.overNumber && OversHelper.isLegalBall(it.ballType) }.size
+    val thisOverBalls: StateFlow<List<Ball>> = combine(
+        balls,
+        currentBowler
+    ) { ballList, activeBowler ->
+        if (ballList.isEmpty()) return@combine emptyList()
+        val lastBall = ballList.last()
+        val legalInLastOver = ballList.filter { it.overNumber == lastBall.overNumber && OversHelper.isLegalBall(it.ballType) }.size
         
-        // Show balls in the current over
-        ballList.filter { it.overNumber == last.overNumber }
+        if (legalInLastOver == 6) {
+            if (activeBowler != null) {
+                emptyList()
+            } else {
+                ballList.filter { it.overNumber == lastBall.overNumber }
+            }
+        } else {
+            ballList.filter { it.overNumber == lastBall.overNumber }
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val scoringButtonsEnabled: StateFlow<Boolean> = combine(
+        balls,
+        currentBowler,
+        innings,
+        match
+    ) { ballList, activeBowler, inn, m ->
+        if (inn == null || m == null || inn.isCompleted || m.status == MatchStatus.COMPLETED) {
+            return@combine false
+        }
+        if (ballList.isEmpty()) {
+            activeBowler != null
+        } else {
+            val lastBall = ballList.last()
+            val legalInLastOver = ballList.filter { it.overNumber == lastBall.overNumber && OversHelper.isLegalBall(it.ballType) }.size
+            if (legalInLastOver == 6) {
+                activeBowler != null
+            } else {
+                true
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+
 
     // Target information for 2nd Innings
     private val _firstInningsRuns = MutableStateFlow<Int>(0)
@@ -127,6 +165,7 @@ class ScoringViewModel @Inject constructor(
     fun initMatch(matchId: Long, inningsNumber: Int) {
         _matchId.value = matchId
         _inningsNumber.value = inningsNumber
+        _selectedBowlerForNewOver.value = null
     }
 
     fun recordNormalBall(runs: Int) {
@@ -152,6 +191,7 @@ class ScoringViewModel @Inject constructor(
     ) {
         val mid = _matchId.value
         val inum = _inningsNumber.value
+        val currentBowlerName = currentBowler.value?.playerName
         recordBallUseCase(
             matchId = mid,
             inningsNumber = inum,
@@ -161,8 +201,10 @@ class ScoringViewModel @Inject constructor(
             isWicket = isWicket,
             dismissalType = dismissalType,
             fielderName = fielderName,
-            dismissedPlayerName = dismissedPlayerName
+            dismissedPlayerName = dismissedPlayerName,
+            bowlerName = currentBowlerName
         )
+        _selectedBowlerForNewOver.value = null
     }
 
     fun undoLastBall() {
@@ -181,16 +223,19 @@ class ScoringViewModel @Inject constructor(
 
         viewModelScope.launch {
             val existing = inningsRepository.getBowlerSync(mid, inum, bName)
-            if (existing == null) {
+            val bowler = if (existing == null) {
                 val newBowler = BowlerInnings(
                     matchId = mid,
                     inningsNumber = inum,
                     playerName = bName
                 )
                 inningsRepository.saveBowlersInnings(listOf(newBowler))
+                newBowler
             } else {
                 inningsRepository.updateBowlerInnings(existing)
+                existing
             }
+            _selectedBowlerForNewOver.value = bowler
         }
     }
 

@@ -19,7 +19,8 @@ class RecordBallUseCase @Inject constructor(
         isWicket: Boolean = false,
         dismissalType: DismissalType? = null,
         fielderName: String? = null,
-        dismissedPlayerName: String? = null
+        dismissedPlayerName: String? = null,
+        bowlerName: String? = null
     ): Ball {
         // 1. Fetch current Innings & Match state
         val innings = requireNotNull(inningsRepository.getInningsByNumberSync(matchId, inningsNumber)) {
@@ -86,7 +87,9 @@ class RecordBallUseCase @Inject constructor(
         }
 
         // Get bowler name
-        val bowlerName = if (ballsList.isEmpty()) {
+        val resolvedBowlerName = if (!bowlerName.isNullOrBlank()) {
+            bowlerName
+        } else if (ballsList.isEmpty()) {
             val bowlers = inningsRepository.getBowlersForInningsSync(matchId, inningsNumber)
             bowlers.firstOrNull()?.playerName ?: "Bowler"
         } else {
@@ -94,17 +97,23 @@ class RecordBallUseCase @Inject constructor(
             // If the last ball completed the over, we need a new bowler
             val totalLegalInLastOver = ballsList.filter { it.overNumber == lastBall.overNumber && OversHelper.isLegalBall(it.ballType) }.size
             if (totalLegalInLastOver == 6) {
-                // The scoring screen/viewmodel will set/insert the new bowler. We fetch the latest bowler from BowlerInnings table
-                // who has 0 balls bowled or is just selected. For simplicity, we can fetch the bowler who was active
-                // In UI, the next bowler is saved in BowlerInnings first. We can get the one with the latest update or most recent.
                 val bowlers = inningsRepository.getBowlersForInningsSync(matchId, inningsNumber)
-                // Filter bowlers who are not the last over bowler, or just the one with ballsBowled = 0 or most recently added.
                 val lastBowler = lastBall.bowlerName
                 val nextBowler = bowlers.firstOrNull { it.playerName != lastBowler } ?: bowlers.firstOrNull()
                 nextBowler?.playerName ?: "Bowler"
             } else {
                 lastBall.bowlerName
             }
+        }
+
+        // Ensure bowler exists in DB, insert if missing
+        if (inningsRepository.getBowlerSync(matchId, inningsNumber, resolvedBowlerName) == null) {
+            val newBowler = BowlerInnings(
+                matchId = matchId,
+                inningsNumber = inningsNumber,
+                playerName = resolvedBowlerName
+            )
+            inningsRepository.saveBowlersInnings(listOf(newBowler))
         }
 
         // 2. Determine Ball details
@@ -119,7 +128,7 @@ class RecordBallUseCase @Inject constructor(
             ballNumber = ballNo,
             strikerName = currentStrikerName,
             nonStrikerName = currentNonStrikerName,
-            bowlerName = bowlerName,
+            bowlerName = resolvedBowlerName,
             runsBatsman = runsBatsman,
             runsExtra = runsExtra,
             ballType = ballType,
@@ -147,11 +156,11 @@ class RecordBallUseCase @Inject constructor(
         if (isWicket && savedBall.dismissedPlayerName != null) {
             val dpName = savedBall.dismissedPlayerName
             val desc = when (dismissalType) {
-                DismissalType.BOWLED -> "b $bowlerName"
-                DismissalType.CAUGHT -> if (!fielderName.isNullOrBlank()) "c $fielderName b $bowlerName" else "c b $bowlerName"
-                DismissalType.LBW -> "lbw b $bowlerName"
-                DismissalType.STUMPED -> if (!fielderName.isNullOrBlank()) "st $fielderName b $bowlerName" else "st b $bowlerName"
-                DismissalType.HIT_WICKET -> "hit wicket b $bowlerName"
+                DismissalType.BOWLED -> "b $resolvedBowlerName"
+                DismissalType.CAUGHT -> if (!fielderName.isNullOrBlank()) "c $fielderName b $resolvedBowlerName" else "c b $resolvedBowlerName"
+                DismissalType.LBW -> "lbw b $resolvedBowlerName"
+                DismissalType.STUMPED -> if (!fielderName.isNullOrBlank()) "st $fielderName b $resolvedBowlerName" else "st b $resolvedBowlerName"
+                DismissalType.HIT_WICKET -> "hit wicket b $resolvedBowlerName"
                 DismissalType.RUN_OUT -> if (!fielderName.isNullOrBlank()) "run out ($fielderName)" else "run out"
                 DismissalType.RETIRED_HURT -> "retired hurt"
                 null -> "out"
@@ -170,8 +179,8 @@ class RecordBallUseCase @Inject constructor(
         updatedNonStriker?.let { inningsRepository.updateBatsmanInnings(it) }
 
         // 6. Update Bowler stats
-        val bowlerInnings = requireNotNull(inningsRepository.getBowlerSync(matchId, inningsNumber, bowlerName)) {
-            "Bowler innings not found: $bowlerName"
+        val bowlerInnings = requireNotNull(inningsRepository.getBowlerSync(matchId, inningsNumber, resolvedBowlerName)) {
+            "Bowler innings not found: $resolvedBowlerName"
         }
         
         // Bowler concedes batsman runs, plus wide runs, plus no-ball penalty (1). Byes and legbyes do not count against bowler.
