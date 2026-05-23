@@ -180,6 +180,12 @@ class ScoringViewModel @Inject constructor(
         }
     }
 
+    fun recordNoBall(runsBatsman: Int, runsExtra: Int) {
+        viewModelScope.launch {
+            recordBall(runsBatsman, runsExtra, BallType.NO_BALL)
+        }
+    }
+
     suspend fun recordBall(
         runsBatsman: Int,
         runsExtra: Int,
@@ -254,6 +260,32 @@ class ScoringViewModel @Inject constructor(
                     playerName = batName
                 )
                 inningsRepository.saveBatsmenInnings(listOf(newBatsman))
+            }
+        }
+    }
+
+    fun switchStrike() {
+        val mid = _matchId.value
+        val inum = _inningsNumber.value
+        viewModelScope.launch {
+            val ballList = inningsRepository.getBallsForInningsSync(mid, inum)
+            if (ballList.isNotEmpty()) {
+                val lastBall = ballList.last()
+                val updatedBall = lastBall.copy(
+                    strikerName = lastBall.nonStrikerName,
+                    nonStrikerName = lastBall.strikerName
+                )
+                inningsRepository.recordBall(updatedBall)
+            } else {
+                val active = activeBatsmen.value
+                if (active.size >= 2) {
+                    val striker = active[0]
+                    val nonStriker = active[1]
+                    val updatedStriker = striker.copy(playerName = nonStriker.playerName)
+                    val updatedNonStriker = nonStriker.copy(playerName = striker.playerName)
+                    inningsRepository.updateBatsmanInnings(updatedStriker)
+                    inningsRepository.updateBatsmanInnings(updatedNonStriker)
+                }
             }
         }
     }

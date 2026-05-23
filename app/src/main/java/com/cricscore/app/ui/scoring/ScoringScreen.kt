@@ -565,7 +565,7 @@ fun ScoringScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     ScalingButton(
-                        onClick = { debouncer.execute { viewModel.recordExtraBall(1, BallType.WIDE) } },
+                        onClick = { showExtrasDialogType = BallType.WIDE },
                         enabled = buttonsEnabled,
                         modifier = Modifier
                             .weight(1f)
@@ -576,7 +576,7 @@ fun ScoringScreen(
                         Text(text = "WD", fontFamily = DMSans, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                     ScalingButton(
-                        onClick = { debouncer.execute { viewModel.recordExtraBall(1, BallType.NO_BALL) } },
+                        onClick = { showExtrasDialogType = BallType.NO_BALL },
                         enabled = buttonsEnabled,
                         modifier = Modifier
                             .weight(1f)
@@ -610,7 +610,7 @@ fun ScoringScreen(
                     }
                 }
 
-                // Bottom row: Undo & Wicket
+                // Bottom row: Undo, Switch, Wicket
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -629,8 +629,27 @@ fun ScoringScreen(
                         border = BorderStroke(1.dp, BorderGray)
                     ) {
                         Icon(painter = painterResource(id = R.drawable.ic_undo), contentDescription = "Undo", modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = stringResource(id = R.string.undo), fontFamily = DMSans, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = stringResource(id = R.string.undo), fontFamily = DMSans, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    }
+
+                    // Switch Strike
+                    Button(
+                        onClick = { viewModel.switchStrike() },
+                        enabled = buttonsEnabled,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        border = BorderStroke(1.dp, BorderGray)
+                    ) {
+                        Icon(painter = painterResource(id = R.drawable.ic_switch), contentDescription = "Switch Strike", modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = "Switch", fontFamily = DMSans, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
 
                     // Wicket
@@ -638,7 +657,7 @@ fun ScoringScreen(
                         onClick = { showDismissalSheet = true },
                         enabled = buttonsEnabled,
                         modifier = Modifier
-                            .weight(1f)
+                            .weight(1.2f)
                             .height(52.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -647,8 +666,8 @@ fun ScoringScreen(
                         )
                     ) {
                         Icon(painter = painterResource(id = R.drawable.ic_wicket), contentDescription = "Wicket", modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "WICKET", fontFamily = DMSans, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = "WICKET", fontFamily = DMSans, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
             }
@@ -664,6 +683,7 @@ fun ScoringScreen(
         ModalBottomSheet(
             onDismissRequest = { /* Force bowler selection, cannot dismiss */ },
             sheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = true,
                 confirmValueChange = { targetValue ->
                     targetValue != SheetValue.Hidden
                 }
@@ -1128,28 +1148,146 @@ fun ScoringScreen(
                 )
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    (1..4).forEach { runs ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.surface)
-                                .border(1.dp, BorderGray, RoundedCornerShape(8.dp))
-                                .clickable {
-                                    viewModel.recordExtraBall(runs, extraType)
-                                    showExtrasDialogType = null
-                                }
-                                .padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "$runs Run${if (runs > 1) "s" else ""}",
-                                fontFamily = DMSans,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (extraType == BallType.WIDE) {
+                        // Wide runs selection: standard wide (1 run), wide + runs completed
+                        listOf(
+                            Pair(1, "Wide only (1 Run)"),
+                            Pair(2, "Wide + 1 (2 Runs)"),
+                            Pair(3, "Wide + 2 (3 Runs)"),
+                            Pair(4, "Wide + 3 (4 Runs)"),
+                            Pair(5, "Wide + 4 (5 Runs)")
+                        ).forEach { (runs, label) ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .border(1.dp, BorderGray, RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        viewModel.recordExtraBall(runs, BallType.WIDE)
+                                        showExtrasDialogType = null
+                                    }
+                                    .padding(vertical = 12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontFamily = DMSans,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    } else if (extraType == BallType.NO_BALL) {
+                        // No Ball runs selection:
+                        // 1. Off the bat (runsBatsman + 1 penalty extra)
+                        // 2. Byes/Leg-byes (0 runsBatsman + penalty + runsExtra byes)
+                        Text(
+                            text = "OFF THE BAT",
+                            fontFamily = DMSans,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            color = TextGray,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                        )
+                        listOf(
+                            Triple(0, 1, "NB only (1 Run)"),
+                            Triple(1, 1, "NB + 1 run (2 Runs)"),
+                            Triple(2, 1, "NB + 2 runs (3 Runs)"),
+                            Triple(3, 1, "NB + 3 runs (4 Runs)"),
+                            Triple(4, 1, "NB + 4 runs (5 Runs)"),
+                            Triple(6, 1, "NB + 6 runs (7 Runs)")
+                        ).forEach { (runsBat, runsExtra, label) ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .border(1.dp, BorderGray, RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        viewModel.recordNoBall(runsBat, runsExtra)
+                                        showExtrasDialogType = null
+                                    }
+                                    .padding(vertical = 12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontFamily = DMSans,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = "BYES / EXTRAS",
+                            fontFamily = DMSans,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            color = TextGray,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
+                        )
+                        listOf(
+                            Triple(0, 2, "NB + 1 Bye (2 Runs)"),
+                            Triple(0, 3, "NB + 2 Byes (3 Runs)"),
+                            Triple(0, 4, "NB + 3 Byes (4 Runs)"),
+                            Triple(0, 5, "NB + 4 Byes (5 Runs)")
+                        ).forEach { (runsBat, runsExtra, label) ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .border(1.dp, BorderGray, RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        viewModel.recordNoBall(runsBat, runsExtra)
+                                        showExtrasDialogType = null
+                                    }
+                                    .padding(vertical = 12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontFamily = DMSans,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    } else {
+                        // BYE / LEG_BYE runs selection: standard 1 to 4 runs
+                        (1..4).forEach { runs ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .border(1.dp, BorderGray, RoundedCornerShape(8.dp))
+                                    .clickable {
+                                        viewModel.recordExtraBall(runs, extraType)
+                                        showExtrasDialogType = null
+                                    }
+                                    .padding(vertical = 12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "$runs Run${if (runs > 1) "s" else ""}",
+                                    fontFamily = DMSans,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
                 }
