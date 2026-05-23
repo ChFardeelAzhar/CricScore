@@ -29,11 +29,11 @@
     <string name="toss_result_won">%s won the toss</string>
     <string name="toss_elected_to">and elected to %s</string>
     <string name="elects_to">%s ELECTS TO...</string>
-    <string name="confirm_setup_innings">Confirm &amp; Setup Innings →</string>
+    <string name="confirm_setup_innings">Confirm &amp; Setup Innings</string>
     <string name="heads">HEADS</string>
     <string name="tails">TAILS</string>
-    <string name="bat">BAT</string>
-    <string name="bowl">BOWL</string>
+    <string name="bat">🏏 BAT</string>
+    <string name="bowl">🥎 BOWL</string>
 
     <!-- Innings Setup -->
     <string name="innings_setup">Innings Setup</string>

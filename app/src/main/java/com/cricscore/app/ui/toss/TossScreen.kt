@@ -4,7 +4,6 @@ import android.widget.Toast
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
@@ -30,13 +30,77 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cricscore.app.R
 import com.cricscore.app.domain.model.TossResult
-import com.cricscore.app.ui.theme.BarlowCondensed
-import com.cricscore.app.ui.theme.BorderGray
-import com.cricscore.app.ui.theme.DMSans
-import com.cricscore.app.ui.theme.TextGray
+import com.cricscore.app.ui.theme.*
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.Random
+
+@Composable
+fun GoldCoin(
+    side: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(90.dp)
+            .clip(CircleShape)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color(0xFFFFD700), Color(0xFFF5A623))
+                )
+            )
+            .border(4.dp, Color(0xFFD88B0E), CircleShape)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        // Inner circle border
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(6.dp)
+                .border(1.dp, Color(0xFFD88B0E).copy(alpha = 0.5f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = if (side == "HEADS") "🦁" else "🐯",
+                fontSize = 44.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+fun TossSectionCard(
+    title: String,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = NavySurface),
+        border = BorderStroke(1.dp, BorderGray)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = title,
+                fontFamily = DMSans,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                color = TextGray,
+                letterSpacing = 1.sp
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            content()
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,10 +116,17 @@ fun TossScreen(
     
     val match by viewModel.match.collectAsStateWithLifecycle()
     
+    var callerTeam by remember { mutableStateOf("") }
+    var calledSide by remember { mutableStateOf("") } // "HEADS" or "TAILS"
+    var coinResult by remember { mutableStateOf("HEADS") } // "HEADS" or "TAILS"
+    
     var tossWinnerState by remember { mutableStateOf("") }
     var tossDecisionState by remember { mutableStateOf<TossResult?>(null) }
     
-    var coinImageRes by remember { mutableStateOf(R.drawable.ic_coin_heads) }
+    var showBottomSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
     
     // Animation properties
     val rotationY = remember { Animatable(0f) }
@@ -70,14 +141,38 @@ fun TossScreen(
     LaunchedEffect(key1 = viewModel) {
         viewModel.tossSaved.collectLatest { saved ->
             if (saved) {
+                showBottomSheet = false
                 onTossSaved(matchId)
+            }
+        }
+    }
+
+    // Default selection initialization once match loads
+    LaunchedEffect(match) {
+        match?.let { matchVal ->
+            if (callerTeam.isEmpty()) {
+                callerTeam = matchVal.team1
+            }
+            if (calledSide.isEmpty()) {
+                calledSide = "HEADS"
             }
         }
     }
 
     fun flipCoin() {
         if (isFlipping) return
+        if (callerTeam.isEmpty()) {
+            Toast.makeText(context, "Please select who calls first", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (calledSide.isEmpty()) {
+            Toast.makeText(context, "Please select the call (HEADS/TAILS) first", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
         isFlipping = true
+        tossWinnerState = ""
+        tossDecisionState = null
         
         coroutineScope.launch {
             // Concurrent spin rotation and scale lift
@@ -94,11 +189,15 @@ fun TossScreen(
             
             val random = Random()
             val isHeads = random.nextBoolean()
-            coinImageRes = if (isHeads) R.drawable.ic_coin_heads else R.drawable.ic_coin_tails
+            coinResult = if (isHeads) "HEADS" else "TAILS"
             
             match?.let { matchVal ->
-                val wonTeam = if (random.nextBoolean()) matchVal.team1 else matchVal.team2
-                tossWinnerState = wonTeam
+                tossWinnerState = if (coinResult == calledSide) {
+                    callerTeam
+                } else {
+                    if (callerTeam == matchVal.team1) matchVal.team2 else matchVal.team1
+                }
+                showBottomSheet = true
             }
             
             isFlipping = false
@@ -111,12 +210,21 @@ fun TossScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = stringResource(id = R.string.coin_toss),
-                        fontFamily = BarlowCondensed,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 26.sp
-                    )
+                    Column {
+                        Text(
+                            text = "STEP 2 OF 3",
+                            fontFamily = DMSans,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp,
+                            color = LimeAccent
+                        )
+                        Text(
+                            text = stringResource(id = R.string.coin_toss),
+                            fontFamily = BarlowCondensed,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 24.sp
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -136,77 +244,231 @@ fun TossScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(Modifier.height(8.dp))
 
             // Coin Graphics & Flip Area
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp),
-                contentAlignment = Alignment.BottomCenter
+                    .height(160.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .graphicsLayer {
-                                this.rotationY = rotationY.value
-                                this.translationY = translationY.value
-                                this.scaleX = scale.value
-                                this.scaleY = scale.value
-                            }
-                            .size(135.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surface)
-                        ,
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = coinImageRes),
-                            contentDescription = "Coin",
-                            modifier = Modifier.size(130.dp)
+                // Outer glow shadow circle
+                Box(
+                    modifier = Modifier
+                        .graphicsLayer {
+                            this.rotationY = rotationY.value
+                            this.translationY = translationY.value
+                            this.scaleX = scale.value
+                            this.scaleY = scale.value
+                        }
+                        .size(115.dp)
+                        .clip(CircleShape)
+                        .background(
+                            brush = Brush.radialGradient(
+                                colors = listOf(LimeAccent.copy(alpha = 0.3f), Color.Transparent),
+                                radius = 180f
+                            )
                         )
-                    }
-                }
+                )
+
+                // The Golden Coin
+                GoldCoin(
+                    side = coinResult,
+                    onClick = { flipCoin() },
+                    modifier = Modifier
+                        .graphicsLayer {
+                            this.rotationY = rotationY.value
+                            this.translationY = translationY.value
+                            this.scaleX = scale.value
+                            this.scaleY = scale.value
+                        }
+                )
             }
 
             Spacer(Modifier.height(8.dp))
+
+            // Result capsule showing HEADS or TAILS below coin
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(NavySurface)
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = coinResult,
+                    color = LimeAccent,
+                    fontFamily = DMSans,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
 
             // Flip Coin Button
             Button(
                 onClick = { flipCoin() },
                 enabled = !isFlipping,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .height(48.dp),
+                modifier = Modifier.height(48.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.primary
+                    containerColor = NavySurface,
+                    contentColor = LimeAccent
                 ),
+                border = BorderStroke(1.dp, BorderGray)
             ) {
                 Text(
                     text = "Flip Coin 🪙",
                     fontFamily = DMSans,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 15.sp
                 )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // Toss Result Card
-            if (tossWinnerState.isNotEmpty()) {
+            // Radio Groups (Toss winner & decision selection cards)
+            match?.let { matchVal ->
+                // Who Won The Toss (WHO CALLS?)
+                TossSectionCard(title = stringResource(id = R.string.who_calls)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        val teams = listOf(matchVal.team1, matchVal.team2)
+                        teams.forEach { team ->
+                            val isSelected = callerTeam == team
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) LimeAccent else NavyDark)
+                                    .border(1.dp, if (isSelected) LimeAccent else BorderGray, RoundedCornerShape(8.dp))
+                                    .clickable { 
+                                        callerTeam = team
+                                        // Reset coin outcome until they flip again
+                                        tossWinnerState = ""
+                                        tossDecisionState = null
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center,
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(8.dp)
+                                            .background(if (isSelected) NavyDark else WicketRed, CircleShape)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = team,
+                                        fontFamily = DMSans,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        color = if (isSelected) NavyDark else TextGray
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // [CALLER] CALLS...
+                TossSectionCard(title = stringResource(id = R.string.calls_label, callerTeam.uppercase())) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        val sides = listOf("HEADS", "TAILS")
+                        sides.forEach { side ->
+                            val isSelected = calledSide == side
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) LimeAccent else NavyDark)
+                                    .border(1.dp, if (isSelected) LimeAccent else BorderGray, RoundedCornerShape(8.dp))
+                                    .clickable { 
+                                        calledSide = side
+                                        // Reset coin outcome until they flip again
+                                        tossWinnerState = ""
+                                        tossDecisionState = null
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = side,
+                                    fontFamily = DMSans,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = if (isSelected) NavyDark else TextGray
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Re-open Bottom Sheet button if the coin has been flipped but not confirmed
+                if (tossWinnerState.isNotEmpty()) {
+                    Button(
+                        onClick = { showBottomSheet = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = LimeAccent,
+                            contentColor = NavyDark
+                        )
+                    ) {
+                        Text(
+                            text = "Choose Decision →",
+                            fontFamily = DMSans,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+
+    // Modal Bottom Sheet for Toss Result & Elect Decision
+    if (showBottomSheet && tossWinnerState.isNotEmpty()) {
+        ModalBottomSheet(
+            onDismissRequest = { showBottomSheet = false },
+            sheetState = sheetState,
+            containerColor = NavySurface,
+            dragHandle = { BottomSheetDefaults.DragHandle(color = BorderGray) }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Toss Result green banner
                 Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
                     color = Color(0xFF111810),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                    border = BorderStroke(1.dp, LimeAccent.copy(alpha = 0.5f))
                 ) {
                     Column(
                         modifier = Modifier
@@ -224,8 +486,8 @@ fun TossScreen(
                                 text = "TOSS RESULT",
                                 fontFamily = DMSans,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 12.sp,
+                                color = LimeAccent,
                                 letterSpacing = 1.2.sp
                             )
                         }
@@ -233,10 +495,10 @@ fun TossScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = "$tossWinnerState won the toss",
+                            text = stringResource(id = R.string.toss_result_won, tossWinnerState),
                             fontFamily = DMSans,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
+                            fontSize = 18.sp,
                             color = Color.White,
                             textAlign = TextAlign.Center
                         )
@@ -251,149 +513,110 @@ fun TossScreen(
                                     text = "and elected to ",
                                     fontFamily = DMSans,
                                     fontWeight = FontWeight.Normal,
-                                    fontSize = 15.sp,
+                                    fontSize = 14.sp,
                                     color = TextGray
                                 )
                                 Text(
-                                    text = if (tossDecisionState == TossResult.BAT)
-                                        stringResource(id = R.string.bat).uppercase()
-                                    else
-                                        stringResource(id = R.string.bowl).uppercase(),
+                                    text = if (tossDecisionState == TossResult.BAT) "BAT" else "BOWL",
                                     fontFamily = DMSans,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp,
-                                    color = MaterialTheme.colorScheme.primary
+                                    fontSize = 14.sp,
+                                    color = LimeAccent
                                 )
                             }
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(16.dp))
-            }
 
+                Spacer(modifier = Modifier.height(20.dp))
 
-
-            // Radio Groups replacement (Toss winner & decision selection cards)
-            match?.let { matchVal ->
-                // Who Won The Toss
-                Text(
-                    text = stringResource(id = R.string.who_calls),
-                    fontFamily = DMSans,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = TextGray
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                // [TOSS WINNER] ELECTS TO... card
+                TossSectionCard(
+                    title = stringResource(
+                        id = R.string.elects_to,
+                        tossWinnerState.uppercase()
+                    )
                 ) {
-                    val teams = listOf(matchVal.team1, matchVal.team2)
-                    teams.forEach { team ->
-                        val isSelected = tossWinnerState == team
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface)
-                                .border(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else BorderGray, RoundedCornerShape(8.dp))
-                                .clickable { tossWinnerState = team },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = team,
-                                fontFamily = DMSans,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                            )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        val decisions = listOf(
+                            Pair(TossResult.BAT, "🏏 BAT"),
+                            Pair(TossResult.BOWL, "🎳 BOWL")
+                        )
+                        decisions.forEach { (decision, label) ->
+                            val isSelected = tossDecisionState == decision
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) LimeAccent else NavyDark)
+                                    .border(1.dp, if (isSelected) LimeAccent else BorderGray, RoundedCornerShape(8.dp))
+                                    .clickable { tossDecisionState = decision },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontFamily = DMSans,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = if (isSelected) NavyDark else TextGray
+                                )
+                            }
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(28.dp))
 
-                // What they elected to do
-                Text(
-                    text = if (tossWinnerState.isNotEmpty()) {
-                        stringResource(id = R.string.elects_to, tossWinnerState.uppercase())
-                    } else {
-                        "DECISION"
-                    },
-                    fontFamily = DMSans,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = TextGray
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    val decisions = listOf(
-                        Pair(TossResult.BAT, stringResource(id = R.string.bat)),
-                        Pair(TossResult.BOWL, stringResource(id = R.string.bowl))
-                    )
-                    decisions.forEach { (decision, label) ->
-                        val isSelected = tossDecisionState == decision
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface)
-                                .border(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else BorderGray, RoundedCornerShape(8.dp))
-                                .clickable { tossDecisionState = decision },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = label,
-                                fontFamily = DMSans,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                            )
+                // Confirm & Setup Innings Button
+                val isConfirmEnabled = tossDecisionState != null
+                Button(
+                    onClick = {
+                        if (tossWinnerState.isEmpty()) {
+                            Toast.makeText(context, "Please select toss winner", Toast.LENGTH_SHORT).show()
+                            return@Button
                         }
+                        if (tossDecisionState == null) {
+                            Toast.makeText(context, "Please select toss decision", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        viewModel.saveTossResult(tossWinnerState, tossDecisionState!!)
+                    },
+                    enabled = isConfirmEnabled,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = LimeAccent,
+                        contentColor = NavyDark,
+                        disabledContainerColor = LimeAccent.copy(alpha = 0.5f),
+                        disabledContentColor = NavyDark.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "Confirm & Setup Innings",
+                            fontFamily = DMSans,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "→",
+                            fontFamily = DMSans,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(48.dp))
-
-            // Confirm Button
-            Button(
-                onClick = {
-                    if (tossWinnerState.isEmpty()) {
-                        Toast.makeText(context, "Please select toss winner", Toast.LENGTH_SHORT).show()
-                        return@Button
-                    }
-                    if (tossDecisionState == null) {
-                        Toast.makeText(context, "Please select toss decision", Toast.LENGTH_SHORT).show()
-                        return@Button
-                    }
-                    viewModel.saveTossResult(tossWinnerState, tossDecisionState!!)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            ) {
-                Text(
-                    text = stringResource(id = R.string.confirm_setup_innings),
-                    fontFamily = DMSans,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
