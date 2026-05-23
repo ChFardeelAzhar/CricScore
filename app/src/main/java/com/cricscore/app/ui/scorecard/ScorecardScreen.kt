@@ -15,8 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,6 +50,7 @@ fun ScorecardScreen(
     val match by viewModel.match.collectAsStateWithLifecycle()
     val innings by viewModel.innings.collectAsStateWithLifecycle()
     val inningsNumber by viewModel.inningsNumber.collectAsStateWithLifecycle()
+    val firstInnings by viewModel.firstInnings.collectAsStateWithLifecycle()
     val batsmen by viewModel.batsmen.collectAsStateWithLifecycle()
     val bowlers by viewModel.bowlers.collectAsStateWithLifecycle()
 
@@ -600,6 +604,82 @@ fun ScorecardScreen(
                                         textAlign = TextAlign.End
                                     )
                                 }
+                            }
+                        }
+                    }
+
+                    val firstInn = firstInnings
+                    if (firstInn?.isCompleted == true) {
+                        val target = firstInn.totalRuns + 1
+                        val chasingTeam = firstInn.bowlingTeam
+                        val oversLimit = currentMatch.oversLimit
+                        val rrr = if (oversLimit > 0) target.toFloat() / oversLimit else 0f
+                        val rrrString = String.format(java.util.Locale.US, "%.2f", rrr)
+                        
+                        val rawString = stringResource(id = R.string.team_needs_runs, chasingTeam, target)
+                        val runsText = "$target runs"
+                        val indexOfRuns = rawString.indexOf(runsText)
+                        val targetText = buildAnnotatedString {
+                            if (indexOfRuns != -1) {
+                                val before = rawString.substring(0, indexOfRuns)
+                                val after = rawString.substring(indexOfRuns)
+                                withStyle(style = SpanStyle(color = TextWhite, fontWeight = FontWeight.Bold)) {
+                                    append(before)
+                                }
+                                withStyle(style = SpanStyle(color = LimeAccent, fontWeight = FontWeight.Bold)) {
+                                    append(after)
+                                }
+                            } else {
+                                withStyle(style = SpanStyle(color = TextWhite, fontWeight = FontWeight.Bold)) {
+                                    append("$chasingTeam need ")
+                                }
+                                withStyle(style = SpanStyle(color = LimeAccent, fontWeight = FontWeight.Bold)) {
+                                    append("$target runs")
+                                }
+                            }
+                        }
+                        
+                        val subtext = stringResource(id = R.string.in_overs_rrr, oversLimit, rrrString)
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = BorderStroke(1.dp, BlueSecondary)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 12.dp, horizontal = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.target_set).uppercase(),
+                                    fontFamily = DMSans,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp,
+                                    color = BlueSecondary,
+                                    letterSpacing = 1.5.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = targetText,
+                                    fontFamily = DMSans,
+                                    fontSize = 20.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = subtext,
+                                    fontFamily = DMSans,
+                                    fontSize = 13.sp,
+                                    color = TextGray,
+                                    textAlign = TextAlign.Center
+                                )
                             }
                         }
                     }

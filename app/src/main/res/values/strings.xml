@@ -107,7 +107,7 @@
     <string name="won_by_runs">won by %d runs</string>
     <string name="won_by_wickets">won by %d wickets</string>
     <string name="match_tied">Match Tied!</string>
-    <string name="player_of_match">PLAYER OF THE MATCH</string>
+    <string name="player_of_match">🏆 PLAYER OF THE MATCH</string>
     <string name="new_match">New Match</string>
     <string name="full_scorecard">Full Scorecard</string>
     <string name="footer_tagline">CricScore · Local Cricket Scorer · No ads · No fluff</string>

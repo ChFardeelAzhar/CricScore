@@ -34,6 +34,14 @@ class ScorecardViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    val firstInnings: StateFlow<Innings?> = _matchId
+        .flatMapLatest { id ->
+            if (id == 0L) flowOf(null) else inningsRepository.getInningsForMatch(id).map { list ->
+                list.firstOrNull { it.inningsNumber == 1 }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     val batsmen: StateFlow<List<BatsmanInnings>> = combine(_matchId, _inningsNumber) { id, num -> Pair(id, num) }
         .flatMapLatest { (id, num) ->
             if (id == 0L) flowOf(emptyList()) else inningsRepository.getBatsmenForInnings(id, num)

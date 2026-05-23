@@ -543,7 +543,7 @@ fun TossScreen(
                     ) {
                         val decisions = listOf(
                             Pair(TossResult.BAT, "🏏 BAT"),
-                            Pair(TossResult.BOWL, "🎳 BOWL")
+                            Pair(TossResult.BOWL, "\uD83E\uDD4E BOWL")
                         )
                         decisions.forEach { (decision, label) ->
                             val isSelected = tossDecisionState == decision

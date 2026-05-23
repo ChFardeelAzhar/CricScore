@@ -173,8 +173,14 @@ fun CricScoreNavHost(
                     navController.navigate("scorecard/$matchId/$inningsNumber/false")
                 },
                 onMatchCompleted = { mId, innNum, showStartNext ->
-                    navController.navigate("scorecard/$mId/$innNum/$showStartNext") {
-                        popUpTo("home")
+                    if (innNum == 2) {
+                        navController.navigate("result/$mId") {
+                            popUpTo("home")
+                        }
+                    } else {
+                        navController.navigate("scorecard/$mId/$innNum/$showStartNext") {
+                            popUpTo("home")
+                        }
                     }
                 }
             )
