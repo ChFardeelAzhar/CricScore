@@ -20,9 +20,21 @@ class RecordBallUseCase @Inject constructor(
         dismissalType: DismissalType? = null,
         fielderName: String? = null,
         dismissedPlayerName: String? = null,
-        bowlerName: String? = null
+        bowlerName: String? = null,
+        nextBatsmanName: String? = null
     ): Ball {
         // 1. Fetch current Innings & Match state
+        if (!nextBatsmanName.isNullOrBlank()) {
+            val existing = inningsRepository.getBatsmanSync(matchId, inningsNumber, nextBatsmanName.trim())
+            if (existing == null) {
+                val newBatsman = BatsmanInnings(
+                    matchId = matchId,
+                    inningsNumber = inningsNumber,
+                    playerName = nextBatsmanName.trim()
+                )
+                inningsRepository.saveBatsmenInnings(listOf(newBatsman))
+            }
+        }
         val innings = requireNotNull(inningsRepository.getInningsByNumberSync(matchId, inningsNumber)) {
             "Innings not found for matchId: $matchId, inningsNumber: $inningsNumber"
         }
@@ -236,6 +248,16 @@ class RecordBallUseCase @Inject constructor(
         // 8. Strike rotation on the ball
         var finalStriker = currentStrikerName
         var finalNonStriker = currentNonStrikerName
+
+        if (isWicket && dismissedPlayerName != null && !nextBatsmanName.isNullOrBlank()) {
+            val newPlayer = nextBatsmanName.trim()
+            if (dismissedPlayerName == finalStriker) {
+                finalStriker = newPlayer
+            } else if (dismissedPlayerName == finalNonStriker) {
+                finalNonStriker = newPlayer
+            }
+        }
+
         if (OversHelper.shouldSwitchStrike(runsBatsman, runsExtra, ballType)) {
             val temp = finalStriker
             finalStriker = finalNonStriker

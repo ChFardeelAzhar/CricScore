@@ -182,7 +182,7 @@ fun ScoringScreen(
                             text = "${m.team1} vs ${m.team2}",
                             fontFamily = BarlowCondensed,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
+                            fontSize = 24.sp,
                             color = MaterialTheme.colorScheme.onBackground,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -1104,11 +1104,9 @@ fun ScoringScreen(
                                 isWicket = true,
                                 dismissalType = type,
                                 fielderName = fName,
-                                dismissedPlayerName = dismissedPlayerName
+                                dismissedPlayerName = dismissedPlayerName,
+                                nextBatsmanName = nextBat
                             )
-                            if (nextBat != null) {
-                                viewModel.introduceNewBatsman(nextBat)
-                            }
                             showDismissalSheet = false
                         }
                     },

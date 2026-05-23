@@ -144,6 +144,29 @@ class RecordBallUseCaseTest {
     }
 
     @Test
+    fun testWicketDismissalWithNextBatsmanName() = runBlocking {
+        val ball = recordBallUseCase(
+            matchId = matchId,
+            inningsNumber = inningsNumber,
+            runsBatsman = 0,
+            runsExtra = 0,
+            ballType = BallType.NORMAL,
+            isWicket = true,
+            dismissalType = DismissalType.BOWLED,
+            dismissedPlayerName = "Striker",
+            nextBatsmanName = "New Batsman"
+        )
+
+        // Since the striker got out and "New Batsman" entered, "New Batsman" must immediately be on strike (striker)
+        assertEquals("New Batsman", ball.strikerName)
+        assertEquals("Non-Striker", ball.nonStrikerName)
+
+        val nextBatsman = inningsRepository.getBatsmanSync(matchId, inningsNumber, "New Batsman")
+        assertNotNull(nextBatsman)
+        assertEquals("New Batsman", nextBatsman!!.playerName)
+    }
+
+    @Test
     fun testRecordBallWithExplicitBowlerName() = runBlocking {
         // Record 1st over (6 legal balls) with the default bowler
         for (i in 1..6) {

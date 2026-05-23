@@ -193,7 +193,8 @@ class ScoringViewModel @Inject constructor(
         isWicket: Boolean = false,
         dismissalType: DismissalType? = null,
         fielderName: String? = null,
-        dismissedPlayerName: String? = null
+        dismissedPlayerName: String? = null,
+        nextBatsmanName: String? = null
     ) {
         val mid = _matchId.value
         val inum = _inningsNumber.value
@@ -208,7 +209,8 @@ class ScoringViewModel @Inject constructor(
             dismissalType = dismissalType,
             fielderName = fielderName,
             dismissedPlayerName = dismissedPlayerName,
-            bowlerName = currentBowlerName
+            bowlerName = currentBowlerName,
+            nextBatsmanName = nextBatsmanName
         )
         _selectedBowlerForNewOver.value = null
     }
