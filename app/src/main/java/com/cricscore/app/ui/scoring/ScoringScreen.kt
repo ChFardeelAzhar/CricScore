@@ -161,6 +161,7 @@ fun ScoringScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
             // Header row
             Row(
@@ -184,8 +185,9 @@ fun ScoringScreen(
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp,
                             color = MaterialTheme.colorScheme.onBackground,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(8f)
                         )
                     }
                 }
@@ -198,7 +200,8 @@ fun ScoringScreen(
                         contentColor = MaterialTheme.colorScheme.primary
                     ),
                     border = BorderStroke(1.dp, BorderGray),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                    modifier = Modifier.weight(1f)
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_scorecard),
