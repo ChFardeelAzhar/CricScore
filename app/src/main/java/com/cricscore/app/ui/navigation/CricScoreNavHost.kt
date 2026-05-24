@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -27,12 +28,26 @@ import com.cricscore.app.ui.setup.MatchSetupScreen
 import com.cricscore.app.ui.setup.MatchSetupViewModel
 import com.cricscore.app.ui.toss.TossScreen
 import com.cricscore.app.ui.toss.TossViewModel
+import com.cricscore.app.ui.tournament.list.TournamentListScreen
+import com.cricscore.app.ui.tournament.list.TournamentListViewModel
+import com.cricscore.app.ui.tournament.create.TournamentCreateScreen
+import com.cricscore.app.ui.tournament.create.TournamentCreateViewModel
+import com.cricscore.app.ui.tournament.addteams.TournamentAddTeamsScreen
+import com.cricscore.app.ui.tournament.addteams.TournamentAddTeamsViewModel
+import com.cricscore.app.ui.tournament.overview.TournamentOverviewScreen
+import com.cricscore.app.ui.tournament.overview.TournamentOverviewViewModel
+import com.cricscore.app.ui.tournament.result.TournamentResultScreen
+import com.cricscore.app.ui.tournament.result.TournamentResultViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun CricScoreNavHost(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController()
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    val integrationViewModel: TournamentIntegrationViewModel = hiltViewModel()
+
     NavHost(
         navController = navController,
         startDestination = "home",
@@ -68,6 +83,12 @@ fun CricScoreNavHost(
                 viewModel = viewModel,
                 onStartNewMatchClick = {
                     navController.navigate("match_setup")
+                },
+                onNavigateToTournaments = {
+                    navController.navigate("tournament_list")
+                },
+                onNavigateToTournamentOverview = { tournamentId ->
+                    navController.navigate("tournament_overview/$tournamentId")
                 },
                 onMatchClick = { match ->
                     when (match.status) {
@@ -165,8 +186,17 @@ fun CricScoreNavHost(
                 matchId = matchId,
                 inningsNumber = inningsNumber,
                 onBackClick = {
-                    navController.navigate("home") {
-                        popUpTo("home") { inclusive = true }
+                    coroutineScope.launch {
+                        val fixture = integrationViewModel.getFixtureByMatchId(matchId)
+                        if (fixture != null) {
+                            navController.navigate("tournament_overview/${fixture.tournamentId}") {
+                                popUpTo("home")
+                            }
+                        } else {
+                            navController.navigate("home") {
+                                popUpTo("home") { inclusive = true }
+                            }
+                        }
                     }
                 },
                 onViewScorecardClick = {
@@ -174,8 +204,10 @@ fun CricScoreNavHost(
                 },
                 onMatchCompleted = { mId, innNum, showStartNext ->
                     if (innNum == 2) {
-                        navController.navigate("result/$mId") {
-                            popUpTo("home")
+                        integrationViewModel.completeFixtureIfNeeded(mId) {
+                            navController.navigate("result/$mId") {
+                                popUpTo("home")
+                            }
                         }
                     } else {
                         navController.navigate("scorecard/$mId/$innNum/$showStartNext") {
@@ -204,7 +236,16 @@ fun CricScoreNavHost(
                 initialInnings = inningsNumber,
                 showStartNext = showStartNext,
                 onBackClick = {
-                    navController.popBackStack()
+                    coroutineScope.launch {
+                        val fixture = integrationViewModel.getFixtureByMatchId(matchId)
+                        if (fixture != null) {
+                            navController.navigate("tournament_overview/${fixture.tournamentId}") {
+                                popUpTo("home")
+                            }
+                        } else {
+                            navController.popBackStack()
+                        }
+                    }
                 },
                 onStartSecondInningsClick = { mId ->
                     navController.navigate("innings_setup/$mId/2")
@@ -234,15 +275,125 @@ fun CricScoreNavHost(
                 viewModel = viewModel,
                 matchId = matchId,
                 onHomeClick = {
-                    navController.navigate("home") {
-                        popUpTo("home") { inclusive = true }
+                    coroutineScope.launch {
+                        val fixture = integrationViewModel.getFixtureByMatchId(matchId)
+                        if (fixture != null) {
+                            navController.navigate("tournament_overview/${fixture.tournamentId}") {
+                                popUpTo("home")
+                            }
+                        } else {
+                            navController.navigate("home") {
+                                popUpTo("home") { inclusive = true }
+                            }
+                        }
                     }
                 },
                 onViewScorecardClick = {
-                    // Navigate back to scorecard, but with showStartNext = false and innings number = 1 (default)
                     navController.navigate("scorecard/$matchId/1/false") {
                         popUpTo("home")
                     }
+                }
+            )
+        }
+
+        composable("tournament_list") {
+            val viewModel: TournamentListViewModel = hiltViewModel()
+            TournamentListScreen(
+                viewModel = viewModel,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onNavigateToCreate = {
+                    navController.navigate("tournament_create")
+                },
+                onNavigateToOverview = { tournamentId ->
+                    navController.navigate("tournament_overview/$tournamentId")
+                }
+            )
+        }
+
+        composable("tournament_create") {
+            val viewModel: TournamentCreateViewModel = hiltViewModel()
+            TournamentCreateScreen(
+                viewModel = viewModel,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onNextClick = { tournamentId, totalTeams ->
+                    navController.navigate("tournament_add_teams/$tournamentId/$totalTeams")
+                }
+            )
+        }
+
+        composable(
+            route = "tournament_add_teams/{tournamentId}/{totalTeams}",
+            arguments = listOf(
+                navArgument("tournamentId") { type = NavType.LongType },
+                navArgument("totalTeams") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val tournamentId = backStackEntry.arguments?.getLong("tournamentId") ?: 0L
+            val totalTeams = backStackEntry.arguments?.getInt("totalTeams") ?: 2
+            val viewModel: TournamentAddTeamsViewModel = hiltViewModel()
+            TournamentAddTeamsScreen(
+                viewModel = viewModel,
+                tournamentId = tournamentId,
+                totalTeamsLimit = totalTeams,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onFixturesGenerated = { tId ->
+                    navController.navigate("tournament_overview/$tId") {
+                        popUpTo("tournament_list")
+                    }
+                }
+            )
+        }
+
+        composable(
+            route = "tournament_overview/{tournamentId}",
+            arguments = listOf(
+                navArgument("tournamentId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val tournamentId = backStackEntry.arguments?.getLong("tournamentId") ?: 0L
+            val viewModel: TournamentOverviewViewModel = hiltViewModel()
+            TournamentOverviewScreen(
+                viewModel = viewModel,
+                tournamentId = tournamentId,
+                onBackClick = {
+                    navController.navigate("tournament_list") {
+                        popUpTo("tournament_list") { inclusive = true }
+                    }
+                },
+                onStartMatch = { matchId, _ ->
+                    navController.navigate("toss/$matchId")
+                },
+                onResumeMatch = { matchId ->
+                    navController.navigate("scorecard/$matchId/1/false")
+                },
+                onViewScorecard = { matchId ->
+                    navController.navigate("scorecard/$matchId/1/false")
+                },
+                onNavigateToResult = { tId ->
+                    navController.navigate("tournament_result/$tId")
+                }
+            )
+        }
+
+        composable(
+            route = "tournament_result/{tournamentId}",
+            arguments = listOf(
+                navArgument("tournamentId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val tournamentId = backStackEntry.arguments?.getLong("tournamentId") ?: 0L
+            val viewModel: TournamentResultViewModel = hiltViewModel()
+            TournamentResultScreen(
+                viewModel = viewModel,
+                tournamentId = tournamentId,
+                onBackClick = {
+                    navController.popBackStack()
                 }
             )
         }

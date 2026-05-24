@@ -31,16 +31,21 @@ import com.cricscore.app.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
 
+import androidx.compose.foundation.BorderStroke
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
     onStartNewMatchClick: () -> Unit,
+    onNavigateToTournaments: () -> Unit,
+    onNavigateToTournamentOverview: (Long) -> Unit,
     onMatchClick: (Match) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val recentMatches by viewModel.recentMatches.collectAsStateWithLifecycle()
     val activeMatch by viewModel.activeMatch.collectAsStateWithLifecycle()
+    val ongoingTournament by viewModel.ongoingTournament.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -87,8 +92,6 @@ fun HomeScreen(
                 color = MaterialTheme.colorScheme.primary
             )
 
-
-
             Spacer(modifier = Modifier.height(24.dp))
 
             // Primary Start New Match Button
@@ -109,6 +112,84 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Tournaments Button
+            Button(
+                onClick = onNavigateToTournaments,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = NavySurface,
+                    contentColor = TextWhite
+                ),
+                border = BorderStroke(1.dp, BorderGray)
+            ) {
+                Text(
+                    text = "🏆 TOURNAMENTS & LEAGUES",
+                    fontFamily = DMSans,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            }
+
+            // Ongoing Tournament Card
+            ongoingTournament?.let { tournament ->
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = OrangeTertiary.copy(alpha = 0.12f)
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, OrangeTertiary.copy(alpha = 0.4f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToTournamentOverview(tournament.id) }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "ONGOING LEAGUE",
+                                fontFamily = DMSans,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp,
+                                color = OrangeTertiary,
+                                letterSpacing = 1.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = tournament.name,
+                                fontFamily = BarlowCondensed,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                color = TextWhite
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "📍 ${tournament.venue} · ${tournament.totalTeams} Teams",
+                                fontFamily = DMSans,
+                                fontSize = 12.sp,
+                                color = TextGray
+                            )
+                        }
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_trophy),
+                            contentDescription = null,
+                            tint = OrangeTertiary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
             }
 
             // Continue Match Section
