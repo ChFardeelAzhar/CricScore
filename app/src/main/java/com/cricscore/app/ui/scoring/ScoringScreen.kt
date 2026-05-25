@@ -35,6 +35,8 @@ import com.cricscore.app.core.util.CricketCalculator
 import com.cricscore.app.core.util.OversHelper
 import com.cricscore.app.domain.model.*
 import com.cricscore.app.ui.theme.*
+import com.cricscore.app.ui.inningssetup.PlayerSelectionDialog
+import com.cricscore.app.ui.inningssetup.PlayerGridItem
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -82,6 +84,9 @@ fun ScoringScreen(
 
     val thisOverBalls by viewModel.thisOverBalls.collectAsStateWithLifecycle()
     val buttonsEnabled by viewModel.scoringButtonsEnabled.collectAsStateWithLifecycle()
+    val isTournamentMatch by viewModel.isTournamentMatch.collectAsStateWithLifecycle()
+    val availableBatsmen by viewModel.availableBatsmen.collectAsStateWithLifecycle()
+    val availableBowlers by viewModel.availableBowlers.collectAsStateWithLifecycle()
 
     // Overlay dialog triggers
     var showDismissalSheet by remember { mutableStateOf(false) }
@@ -169,7 +174,10 @@ fun ScoringScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     IconButton(onClick = onBackClick) {
                         Icon(
                             painter = painterResource(id = R.drawable.ic_back_arrow),
@@ -183,15 +191,17 @@ fun ScoringScreen(
                             text = "${m.team1} vs ${m.team2}",
                             fontFamily = BarlowCondensed,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 24.sp,
+                            fontSize = 22.sp,
                             color = MaterialTheme.colorScheme.onBackground,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(8f)
                         )
                     }
                 }
-                
+
+                Spacer(modifier = Modifier.width(8.dp)) // thoda breathing room
+
+                // → Right side: Scorecard button (fixed size rehta hai)
                 Button(
                     onClick = onViewScorecardClick,
                     shape = RoundedCornerShape(8.dp),
@@ -201,7 +211,6 @@ fun ScoringScreen(
                     ),
                     border = BorderStroke(1.dp, BorderGray),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                    modifier = Modifier.weight(1f)
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_scorecard),
@@ -808,10 +817,101 @@ fun ScoringScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Recent Bowlers list
-                if (bowlers.isNotEmpty()) {
+                // Bowlers List
+                if (isTournamentMatch) {
                     Text(
-                        text = "RECENT BOWLERS",
+                        text = "SELECT BOWLER FROM SQUAD",
+                        fontFamily = DMSans,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = TextGray
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val playersPerSideVal = match?.playersPerSide ?: 11
+                    val totalOversVal = match?.oversLimit ?: 20
+                    val maxOversPerBowler = kotlin.math.ceil(totalOversVal.toFloat() / playersPerSideVal.toFloat()).toInt()
+
+                    val chunkedBowlers = availableBowlers.chunked(3)
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        chunkedBowlers.forEach { rowBowlers ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                rowBowlers.forEach { p ->
+                                    val bowlerInn = bowlers.firstOrNull { it.playerName == p.playerName }
+                                    val ballsBowledVal = bowlerInn?.ballsBowled ?: 0
+                                    val oversBowledVal = ballsBowledVal / 6
+
+                                    val isJustBowled = p.playerName.equals(lastBowlerName, ignoreCase = true)
+                                    val isQuotaCompleted = oversBowledVal >= maxOversPerBowler
+                                    val isSelected = bowlerName == p.playerName
+                                    val isDisabled = isJustBowled || isQuotaCompleted
+
+                                    val subtitleText = if (bowlerInn != null) {
+                                        "${bowlerInn.runsConceded}/${bowlerInn.wickets} (${CricketCalculator.ballsToOversString(bowlerInn.ballsBowled)} Ov)"
+                                    } else {
+                                        "0/0 (0 Ov)"
+                                    }
+
+                                    Box(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        PlayerGridItem(
+                                            player = p,
+                                            isSelected = isSelected,
+                                            isDisabled = isDisabled,
+                                            onClick = { bowlerName = p.playerName },
+                                            subtitle = subtitleText
+                                        )
+                                    }
+                                }
+                                repeat(3 - rowBowlers.size) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                } else {
+                    // Recent Bowlers list
+                    if (bowlers.isNotEmpty()) {
+                        Text(
+                            text = "RECENT BOWLERS",
+                            fontFamily = DMSans,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = TextGray
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            bowlers.forEach { bowler ->
+                                val isJustBowled = bowler.playerName.equals(lastBowlerName, ignoreCase = true)
+                                val isSelected = selectedBowler?.playerName == bowler.playerName
+                                
+                                RecentBowlerCard(
+                                    bowler = bowler,
+                                    isJustBowled = isJustBowled,
+                                    isSelected = isSelected,
+                                    onClick = {
+                                        bowlerName = bowler.playerName
+                                    }
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
+
+                    // Input Field for Bowler Name
+                    Text(
+                        text = "ENTER NEXT BOWLER",
                         fontFamily = DMSans,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
@@ -819,52 +919,23 @@ fun ScoringScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        bowlers.forEach { bowler ->
-                            val isJustBowled = bowler.playerName.equals(lastBowlerName, ignoreCase = true)
-                            val isSelected = selectedBowler?.playerName == bowler.playerName
-                            
-                            RecentBowlerCard(
-                                bowler = bowler,
-                                isJustBowled = isJustBowled,
-                                isSelected = isSelected,
-                                onClick = {
-                                    bowlerName = bowler.playerName
-                                }
-                            )
-                        }
-                    }
+                    OutlinedTextField(
+                        value = bowlerName,
+                        onValueChange = { bowlerName = it },
+                        placeholder = { Text("Enter bowler name...", color = TextGray) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = TextWhite,
+                            unfocusedTextColor = TextWhite,
+                            focusedBorderColor = LimeAccent,
+                            unfocusedBorderColor = BorderGray,
+                            cursorColor = LimeAccent
+                        )
+                    )
+
                     Spacer(modifier = Modifier.height(24.dp))
                 }
-
-                // Input Field for Bowler Name
-                Text(
-                    text = "ENTER NEXT BOWLER",
-                    fontFamily = DMSans,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp,
-                    color = TextGray
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                OutlinedTextField(
-                    value = bowlerName,
-                    onValueChange = { bowlerName = it },
-                    placeholder = { Text("Enter bowler name...", color = TextGray) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = TextWhite,
-                        unfocusedTextColor = TextWhite,
-                        focusedBorderColor = LimeAccent,
-                        unfocusedBorderColor = BorderGray,
-                        cursorColor = LimeAccent
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
 
                 // Submit Button
                 Button(
@@ -922,6 +993,7 @@ fun ScoringScreen(
             var dismissedPlayerName by remember { mutableStateOf(strikerName) }
             var fielderName by remember { mutableStateOf("") }
             var nextBatsmanName by remember { mutableStateOf("") }
+            var showNextBatsmanDialog by remember { mutableStateOf(false) }
 
             Column(
                 modifier = Modifier
@@ -1058,17 +1130,54 @@ fun ScoringScreen(
                         color = TextGray
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = nextBatsmanName,
-                        onValueChange = { nextBatsmanName = it },
-                        placeholder = { Text("Next batsman name...") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = BorderGray
+                    if (isTournamentMatch) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showNextBatsmanDialog = true }
+                        ) {
+                            OutlinedTextField(
+                                value = nextBatsmanName,
+                                onValueChange = {},
+                                readOnly = true,
+                                enabled = false,
+                                placeholder = { Text("Select next batsman...") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showNextBatsmanDialog) },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                                    disabledBorderColor = BorderGray,
+                                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    disabledTrailingIconColor = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                        }
+
+                        if (showNextBatsmanDialog) {
+                            val remainingPlayer = if (dismissedPlayerName == strikerName) nonStrikerName else strikerName
+                            PlayerSelectionDialog(
+                                title = "Select Next Batsman",
+                                players = availableBatsmen,
+                                selectedPlayerName = nextBatsmanName,
+                                excludePlayerName1 = remainingPlayer,
+                                excludePlayerName2 = "",
+                                onPlayerSelected = { nextBatsmanName = it },
+                                onDismissRequest = { showNextBatsmanDialog = false }
+                            )
+                        }
+                    } else {
+                        OutlinedTextField(
+                            value = nextBatsmanName,
+                            onValueChange = { nextBatsmanName = it },
+                            placeholder = { Text("Next batsman name...") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = BorderGray
+                            )
                         )
-                    )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(28.dp))

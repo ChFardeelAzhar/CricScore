@@ -126,4 +126,56 @@
     <string name="round_n">Round %d</string>
     <string name="match_n">Match %d</string>
     <string name="no_stats_yet">No stats recorded yet. Start playing matches to see leaders.</string>
+
+    <!-- Squad Management -->
+    <string name="manage_squads">Manage Squads</string>
+    <string name="squad_management">Squad Management</string>
+    <string name="add_player">Add Player</string>
+    <string name="player_name_hint">Player name...</string>
+    <string name="jersey_number_hint">Jersey # (optional)</string>
+    <string name="quick_add_players">Quick Add Players</string>
+    <string name="bulk_add_hint">One player name per line\nRohit Sharma\nVirat Kohli</string>
+    <string name="names_detected">%d names detected</string>
+    <string name="squad_complete">✅ Squad Complete</string>
+    <string name="squad_incomplete">⚠ %1$d/%2$d Players</string>
+    <string name="no_players_yet">No players added yet</string>
+    <string name="set_captain">Set as Captain</string>
+    <string name="set_vice_captain">Set as Vice Captain</string>
+    <string name="set_wicket_keeper">Set as Wicket Keeper</string>
+    <string name="remove_player">Remove Player</string>
+    <string name="captain_badge">© C</string>
+    <string name="vc_badge">VC</string>
+    <string name="wk_badge">🧤 WK</string>
+    <string name="player_has_match_history">Cannot remove — player has match history</string>
+    <string name="captain_not_selected_warning">Captain not in Playing XI. Continue anyway?</string>
+    <string name="squad_full">Squad is full (max 20 players)</string>
+    <string name="duplicate_player">%s is already in the squad</string>
+
+    <!-- Playing Eleven -->
+    <string name="select_playing_xi">Select Playing XI</string>
+    <string name="selected_count">%1$d / %2$d Selected</string>
+    <string name="select_more">Select %d more</string>
+    <string name="deselect_some">Deselect %d</string>
+    <string name="confirm_xi">Confirm XI →</string>
+    <string name="no_wk_warning">No wicket-keeper in XI</string>
+    <string name="xi_confirmed">Playing XI confirmed!</string>
+    <string name="select_xi_first">Select Playing XI first</string>
+    <string name="xi_readonly">Match started — XI is locked</string>
+
+    <!-- Next Batsman -->
+    <string name="wicket_whos_next">Wicket! Who\'s Next?</string>
+    <string name="players_remaining">%1$d wickets · %2$d players remaining</string>
+    <string name="confirm_new_batsman">Confirm New Batsman →</string>
+    <string name="no_batsmen_remaining">All out!</string>
+
+    <!-- Bowler Picker -->
+    <string name="just_bowled_tag">Just Bowled</string>
+    <string name="max_overs_tag">Max Overs</string>
+    <string name="yet_to_bowl">Yet to bowl</string>
+
+    <!-- Roles -->
+    <string name="role_batsman">Batsman</string>
+    <string name="role_bowler">Bowler</string>
+    <string name="role_all_rounder">All-Rounder</string>
+    <string name="role_wicket_keeper">Wicket Keeper</string>
 </resources>

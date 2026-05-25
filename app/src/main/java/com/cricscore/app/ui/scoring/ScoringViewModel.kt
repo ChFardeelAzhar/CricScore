@@ -7,6 +7,9 @@ import com.cricscore.app.core.util.OversHelper
 import com.cricscore.app.domain.model.*
 import com.cricscore.app.domain.repository.InningsRepository
 import com.cricscore.app.domain.repository.MatchRepository
+import com.cricscore.app.domain.repository.TournamentRepository
+import com.cricscore.app.domain.repository.PlayingElevenRepository
+import com.cricscore.app.domain.repository.TeamPlayerRepository
 import com.cricscore.app.domain.usecase.RecordBallUseCase
 import com.cricscore.app.domain.usecase.UndoLastBallUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,7 +22,10 @@ class ScoringViewModel @Inject constructor(
     private val matchRepository: MatchRepository,
     private val inningsRepository: InningsRepository,
     private val recordBallUseCase: RecordBallUseCase,
-    private val undoLastBallUseCase: UndoLastBallUseCase
+    private val undoLastBallUseCase: UndoLastBallUseCase,
+    private val tournamentRepository: TournamentRepository,
+    private val playingElevenRepository: PlayingElevenRepository,
+    private val teamPlayerRepository: TeamPlayerRepository
 ) : ViewModel() {
 
     private val _matchId = MutableStateFlow<Long>(0)
@@ -150,6 +156,17 @@ class ScoringViewModel @Inject constructor(
     private val _firstInningsRuns = MutableStateFlow<Int>(0)
     val firstInningsRuns: StateFlow<Int> = _firstInningsRuns.asStateFlow()
 
+    private val _isTournamentMatch = MutableStateFlow(false)
+    val isTournamentMatch: StateFlow<Boolean> = _isTournamentMatch.asStateFlow()
+
+    private val _availableBatsmen = MutableStateFlow<List<TeamPlayer>>(emptyList())
+    val availableBatsmen: StateFlow<List<TeamPlayer>> = _availableBatsmen.asStateFlow()
+
+    private val _availableBowlers = MutableStateFlow<List<TeamPlayer>>(emptyList())
+    val availableBowlers: StateFlow<List<TeamPlayer>> = _availableBowlers.asStateFlow()
+
+    private var linkedFixture: Fixture? = null
+
     init {
         // Collect first innings runs once inningsNumber becomes 2
         viewModelScope.launch {
@@ -160,12 +177,77 @@ class ScoringViewModel @Inject constructor(
                 }
             }
         }
+
+        // Collect innings changes to load available players
+        viewModelScope.launch {
+            innings.collect { inn ->
+                if (inn != null && _isTournamentMatch.value) {
+                    loadAvailablePlayers()
+                }
+            }
+        }
+    }
+
+    fun loadAvailablePlayers() {
+        val fixture = linkedFixture ?: return
+        val inn = innings.value ?: return
+        val batting = inn.battingTeam
+        val bowling = inn.bowlingTeam
+
+        viewModelScope.launch {
+            val battingTeamId = if (batting == fixture.team1Name) fixture.team1Id else fixture.team2Id
+            val bowlingTeamId = if (bowling == fixture.team1Name) fixture.team1Id else fixture.team2Id
+
+            val p11Batsmen = playingElevenRepository.getAvailableBatsmen(fixture.id, battingTeamId)
+            val p11Bowlers = playingElevenRepository.getAvailableBowlers(fixture.id, bowlingTeamId)
+
+            val freshSquadBatting = teamPlayerRepository.getPlayersByTeamSync(battingTeamId)
+            val freshSquadBowling = teamPlayerRepository.getPlayersByTeamSync(bowlingTeamId)
+
+            val batsmenTeamPlayers = p11Batsmen.mapNotNull { p11 ->
+                freshSquadBatting.find { it.id == p11.playerId } ?: TeamPlayer(
+                    id = p11.playerId,
+                    teamId = battingTeamId,
+                    tournamentId = fixture.tournamentId,
+                    playerName = p11.playerName,
+                    isCaptain = p11.isCaptain,
+                    isWicketKeeper = p11.isWicketKeeper
+                )
+            }
+
+            val bowlersTeamPlayers = p11Bowlers.mapNotNull { p11 ->
+                freshSquadBowling.find { it.id == p11.playerId } ?: TeamPlayer(
+                    id = p11.playerId,
+                    teamId = bowlingTeamId,
+                    tournamentId = fixture.tournamentId,
+                    playerName = p11.playerName,
+                    isCaptain = p11.isCaptain,
+                    isWicketKeeper = p11.isWicketKeeper
+                )
+            }
+
+            _availableBatsmen.value = batsmenTeamPlayers
+            _availableBowlers.value = bowlersTeamPlayers
+        }
     }
 
     fun initMatch(matchId: Long, inningsNumber: Int) {
         _matchId.value = matchId
         _inningsNumber.value = inningsNumber
         _selectedBowlerForNewOver.value = null
+
+        viewModelScope.launch {
+            val fixture = tournamentRepository.getFixtureByLinkedMatchId(matchId)
+            linkedFixture = fixture
+            if (fixture != null) {
+                _isTournamentMatch.value = true
+                loadAvailablePlayers()
+            } else {
+                _isTournamentMatch.value = false
+                _availableBatsmen.value = emptyList()
+                _availableBowlers.value = emptyList()
+            }
+        }
     }
 
     fun recordNormalBall(runs: Int) {
@@ -213,6 +295,9 @@ class ScoringViewModel @Inject constructor(
             nextBatsmanName = nextBatsmanName
         )
         _selectedBowlerForNewOver.value = null
+        if (_isTournamentMatch.value) {
+            loadAvailablePlayers()
+        }
     }
 
     fun undoLastBall() {
@@ -220,6 +305,9 @@ class ScoringViewModel @Inject constructor(
             val mid = _matchId.value
             val inum = _inningsNumber.value
             undoLastBallUseCase(mid, inum)
+            if (_isTournamentMatch.value) {
+                loadAvailablePlayers()
+            }
         }
     }
 

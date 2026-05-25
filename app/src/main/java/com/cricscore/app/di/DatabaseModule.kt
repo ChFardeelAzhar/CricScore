@@ -9,9 +9,13 @@ import com.cricscore.app.data.local.db.CricScoreDatabase
 import com.cricscore.app.data.repository.InningsRepositoryImpl
 import com.cricscore.app.data.repository.MatchRepositoryImpl
 import com.cricscore.app.data.repository.TournamentRepositoryImpl
+import com.cricscore.app.data.repository.TeamPlayerRepositoryImpl
+import com.cricscore.app.data.repository.PlayingElevenRepositoryImpl
 import com.cricscore.app.domain.repository.InningsRepository
 import com.cricscore.app.domain.repository.MatchRepository
 import com.cricscore.app.domain.repository.TournamentRepository
+import com.cricscore.app.domain.repository.TeamPlayerRepository
+import com.cricscore.app.domain.repository.PlayingElevenRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -43,6 +47,18 @@ object DatabaseModule {
         }
     }
 
+    val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            database.execSQL("CREATE TABLE IF NOT EXISTS `team_players` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `teamId` INTEGER NOT NULL, `tournamentId` INTEGER NOT NULL, `playerName` TEXT NOT NULL, `jerseyNumber` INTEGER NOT NULL, `role` TEXT NOT NULL, `isCaptain` INTEGER NOT NULL, `isViceCaptain` INTEGER NOT NULL, `isWicketKeeper` INTEGER NOT NULL, `addedAt` INTEGER NOT NULL, FOREIGN KEY(`teamId`) REFERENCES `tournament_teams`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+            database.execSQL("CREATE INDEX IF NOT EXISTS `index_team_players_teamId` ON `team_players` (`teamId`)")
+            database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_team_players_teamId_playerName` ON `team_players` (`teamId`, `playerName`)")
+            database.execSQL("CREATE TABLE IF NOT EXISTS `playing_eleven` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `fixtureId` INTEGER NOT NULL, `teamId` INTEGER NOT NULL, `playerId` INTEGER NOT NULL, `playerName` TEXT NOT NULL, `battingOrder` INTEGER NOT NULL, `isCaptain` INTEGER NOT NULL, `isWicketKeeper` INTEGER NOT NULL, `hasAlreadyBatted` INTEGER NOT NULL, `isCurrentlyBatting` INTEGER NOT NULL, `isOut` INTEGER NOT NULL, `hasBowled` INTEGER NOT NULL, FOREIGN KEY(`fixtureId`) REFERENCES `fixtures`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`teamId`) REFERENCES `tournament_teams`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`playerId`) REFERENCES `team_players`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+            database.execSQL("CREATE INDEX IF NOT EXISTS `index_playing_eleven_fixtureId` ON `playing_eleven` (`fixtureId`)")
+            database.execSQL("CREATE INDEX IF NOT EXISTS `index_playing_eleven_teamId` ON `playing_eleven` (`teamId`)")
+            database.execSQL("CREATE INDEX IF NOT EXISTS `index_playing_eleven_playerId` ON `playing_eleven` (`playerId`)")
+        }
+    }
+
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): CricScoreDatabase {
@@ -51,7 +67,7 @@ object DatabaseModule {
             CricScoreDatabase::class.java,
             "cricscore_db"
         )
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .fallbackToDestructiveMigration()
             .build()
     }
@@ -82,6 +98,12 @@ object DatabaseModule {
 
     @Provides
     fun provideTournamentPlayerStatDao(db: CricScoreDatabase): TournamentPlayerStatDao = db.tournamentPlayerStatDao()
+
+    @Provides
+    fun provideTeamPlayerDao(db: CricScoreDatabase): TeamPlayerDao = db.teamPlayerDao()
+
+    @Provides
+    fun providePlayingElevenDao(db: CricScoreDatabase): PlayingElevenDao = db.playingElevenDao()
 }
 
 @Module
@@ -99,4 +121,12 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindTournamentRepository(impl: TournamentRepositoryImpl): TournamentRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindTeamPlayerRepository(impl: TeamPlayerRepositoryImpl): TeamPlayerRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPlayingElevenRepository(impl: PlayingElevenRepositoryImpl): PlayingElevenRepository
 }
