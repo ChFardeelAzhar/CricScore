@@ -38,6 +38,12 @@ import com.cricscore.app.ui.tournament.overview.TournamentOverviewScreen
 import com.cricscore.app.ui.tournament.overview.TournamentOverviewViewModel
 import com.cricscore.app.ui.tournament.result.TournamentResultScreen
 import com.cricscore.app.ui.tournament.result.TournamentResultViewModel
+import com.cricscore.app.ui.tournament.teammanagement.TeamManagementScreen
+import com.cricscore.app.ui.tournament.teammanagement.TeamManagementViewModel
+import com.cricscore.app.ui.tournament.squadmanagement.SquadManagementScreen
+import com.cricscore.app.ui.tournament.squadmanagement.SquadManagementViewModel
+import com.cricscore.app.ui.tournament.playingeleven.PlayingElevenScreen
+import com.cricscore.app.ui.tournament.playingeleven.PlayingElevenViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -366,8 +372,26 @@ fun CricScoreNavHost(
                         popUpTo("tournament_list") { inclusive = true }
                     }
                 },
-                onStartMatch = { matchId, _ ->
-                    navController.navigate("toss/$matchId")
+                onStartMatch = { matchId, fixtureId ->
+                    coroutineScope.launch {
+                        val fixture = integrationViewModel.getFixtureByMatchId(matchId)
+                        val tournament = integrationViewModel.getTournamentByFixtureId(fixtureId)
+                        if (fixture != null && tournament != null) {
+                            val req = tournament.playersPerSide
+                            val team1Count = integrationViewModel.getSelectedPlayingElevenCount(fixtureId, fixture.team1Id)
+                            val team2Count = integrationViewModel.getSelectedPlayingElevenCount(fixtureId, fixture.team2Id)
+
+                            if (team1Count < req) {
+                                navController.navigate("tournament_playing_eleven/$matchId/$fixtureId/${fixture.team1Id}/${fixture.team1Name}/$req/false")
+                            } else if (team2Count < req) {
+                                navController.navigate("tournament_playing_eleven/$matchId/$fixtureId/${fixture.team2Id}/${fixture.team2Name}/$req/true")
+                            } else {
+                                navController.navigate("toss/$matchId")
+                            }
+                        } else {
+                            navController.navigate("toss/$matchId")
+                        }
+                    }
                 },
                 onResumeMatch = { matchId ->
                     navController.navigate("scorecard/$matchId/1/false")
@@ -377,6 +401,108 @@ fun CricScoreNavHost(
                 },
                 onNavigateToResult = { tId ->
                     navController.navigate("tournament_result/$tId")
+                },
+                onNavigateToTeamManagement = { tId ->
+                    navController.navigate("tournament_team_management/$tId")
+                }
+            )
+        }
+
+        composable(
+            route = "tournament_team_management/{tournamentId}",
+            arguments = listOf(
+                navArgument("tournamentId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val tournamentId = backStackEntry.arguments?.getLong("tournamentId") ?: 0L
+            val viewModel: TeamManagementViewModel = hiltViewModel()
+            TeamManagementScreen(
+                viewModel = viewModel,
+                tournamentId = tournamentId,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onNavigateToSquad = { teamId, tId, teamName ->
+                    navController.navigate("tournament_squad_management/$teamId/$tId/$teamName")
+                }
+            )
+        }
+
+        composable(
+            route = "tournament_squad_management/{teamId}/{tournamentId}/{teamName}",
+            arguments = listOf(
+                navArgument("teamId") { type = NavType.LongType },
+                navArgument("tournamentId") { type = NavType.LongType },
+                navArgument("teamName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
+            val tournamentId = backStackEntry.arguments?.getLong("tournamentId") ?: 0L
+            val teamName = backStackEntry.arguments?.getString("teamName") ?: ""
+            val viewModel: SquadManagementViewModel = hiltViewModel()
+            SquadManagementScreen(
+                viewModel = viewModel,
+                teamId = teamId,
+                tournamentId = tournamentId,
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = "tournament_playing_eleven/{matchId}/{fixtureId}/{teamId}/{teamName}/{playersPerSide}/{isLastTeam}",
+            arguments = listOf(
+                navArgument("matchId") { type = NavType.LongType },
+                navArgument("fixtureId") { type = NavType.LongType },
+                navArgument("teamId") { type = NavType.LongType },
+                navArgument("teamName") { type = NavType.StringType },
+                navArgument("playersPerSide") { type = NavType.IntType },
+                navArgument("isLastTeam") { type = NavType.BoolType }
+            )
+        ) { backStackEntry ->
+            val matchId = backStackEntry.arguments?.getLong("matchId") ?: 0L
+            val fixtureId = backStackEntry.arguments?.getLong("fixtureId") ?: 0L
+            val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
+            val teamName = backStackEntry.arguments?.getString("teamName") ?: ""
+            val playersPerSide = backStackEntry.arguments?.getInt("playersPerSide") ?: 11
+            val isLastTeam = backStackEntry.arguments?.getBoolean("isLastTeam") ?: false
+            val viewModel: PlayingElevenViewModel = hiltViewModel()
+
+            PlayingElevenScreen(
+                viewModel = viewModel,
+                fixtureId = fixtureId,
+                teamId = teamId,
+                playersPerSide = playersPerSide,
+                isLastTeam = isLastTeam,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onConfirmSuccess = {
+                    coroutineScope.launch {
+                        val fixture = integrationViewModel.getFixtureByMatchId(matchId)
+                        if (fixture != null) {
+                            if (!isLastTeam) {
+                                navController.navigate("tournament_playing_eleven/$matchId/$fixtureId/${fixture.team2Id}/${fixture.team2Name}/$playersPerSide/true") {
+                                    popUpTo("tournament_playing_eleven/$matchId/$fixtureId/$teamId/$teamName/$playersPerSide/false") { inclusive = true }
+                                }
+                            } else {
+                                navController.navigate("toss/$matchId") {
+                                    popUpTo("tournament_playing_eleven/$matchId/$fixtureId/$teamId/$teamName/$playersPerSide/true") { inclusive = true }
+                                }
+                            }
+                        } else {
+                            navController.navigate("toss/$matchId")
+                        }
+                    }
+                },
+                onNavigateToSquadSetup = {
+                    coroutineScope.launch {
+                        val fixture = integrationViewModel.getFixtureByMatchId(matchId)
+                        if (fixture != null) {
+                            navController.navigate("tournament_squad_management/$teamId/${fixture.tournamentId}/$teamName")
+                        }
+                    }
                 }
             )
         }

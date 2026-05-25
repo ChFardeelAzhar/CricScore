@@ -45,6 +45,7 @@ fun TournamentOverviewScreen(
     onResumeMatch: (Long) -> Unit, // matchId
     onViewScorecard: (Long) -> Unit, // matchId
     onNavigateToResult: (Long) -> Unit, // tournamentId
+    onNavigateToTeamManagement: (Long) -> Unit, // tournamentId
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect(key1 = tournamentId) {
@@ -86,6 +87,13 @@ fun TournamentOverviewScreen(
                 },
                 actions = {
                     tournament?.let { t ->
+                        IconButton(onClick = { onNavigateToTeamManagement(t.id) }) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_groups),
+                                contentDescription = stringResource(id = R.string.manage_squads),
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
                         if (t.status == TournamentStatus.COMPLETED) {
                             IconButton(onClick = { onNavigateToResult(t.id) }) {
                                 Icon(

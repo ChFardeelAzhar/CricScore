@@ -15,9 +15,11 @@ import com.cricscore.app.data.local.entity.*
         TournamentEntity::class,
         TournamentTeamEntity::class,
         FixtureEntity::class,
-        TournamentPlayerStatEntity::class
+        TournamentPlayerStatEntity::class,
+        TeamPlayerEntity::class,
+        PlayingElevenEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class CricScoreDatabase : RoomDatabase() {
@@ -30,4 +32,6 @@ abstract class CricScoreDatabase : RoomDatabase() {
     abstract fun tournamentTeamDao(): TournamentTeamDao
     abstract fun fixtureDao(): FixtureDao
     abstract fun tournamentPlayerStatDao(): TournamentPlayerStatDao
+    abstract fun teamPlayerDao(): TeamPlayerDao
+    abstract fun playingElevenDao(): PlayingElevenDao
 }

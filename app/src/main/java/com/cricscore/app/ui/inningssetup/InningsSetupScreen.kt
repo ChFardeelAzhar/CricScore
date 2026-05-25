@@ -2,8 +2,13 @@ package com.cricscore.app.ui.inningssetup
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -11,6 +16,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -24,6 +31,9 @@ import com.cricscore.app.ui.theme.BarlowCondensed
 import com.cricscore.app.ui.theme.BorderGray
 import com.cricscore.app.ui.theme.DMSans
 import com.cricscore.app.ui.theme.TextGray
+import com.cricscore.app.ui.theme.OrangeTertiary
+import com.cricscore.app.ui.theme.TextWhite
+import com.cricscore.app.ui.theme.WicketRed
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -40,10 +50,17 @@ fun InningsSetupScreen(
     val context = LocalContext.current
     
     val setupState by viewModel.setupState.collectAsStateWithLifecycle()
+    val isTournamentMatch by viewModel.isTournamentMatch.collectAsStateWithLifecycle()
+    val availableBatsmen by viewModel.availableBatsmen.collectAsStateWithLifecycle()
+    val availableBowlers by viewModel.availableBowlers.collectAsStateWithLifecycle()
     
     var striker by remember { mutableStateOf("") }
     var nonStriker by remember { mutableStateOf("") }
     var bowler by remember { mutableStateOf("") }
+
+    var showStrikerDialog by remember { mutableStateOf(false) }
+    var showNonStrikerDialog by remember { mutableStateOf(false) }
+    var showBowlerDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = matchId, key2 = inningsNumber) {
         viewModel.loadInningsSetup(matchId, inningsNumber)
@@ -178,33 +195,105 @@ fun InningsSetupScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
-                value = striker,
-                onValueChange = { striker = it },
-                label = { Text(text = stringResource(id = R.string.striker_facing_first)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = BorderGray
-                )
-            )
+            if (isTournamentMatch) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showStrikerDialog = true }
+                ) {
+                    OutlinedTextField(
+                        value = striker,
+                        onValueChange = {},
+                        readOnly = true,
+                        enabled = false,
+                        label = { Text(text = stringResource(id = R.string.striker_facing_first)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showStrikerDialog) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledBorderColor = BorderGray,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            disabledTrailingIconColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
 
-            Spacer(modifier = Modifier.height(12.dp))
+                if (showStrikerDialog) {
+                    PlayerSelectionDialog(
+                        title = "Select Striker",
+                        players = availableBatsmen,
+                        selectedPlayerName = striker,
+                        excludePlayerName1 = nonStriker,
+                        excludePlayerName2 = bowler,
+                        onPlayerSelected = { striker = it },
+                        onDismissRequest = { showStrikerDialog = false }
+                    )
+                }
 
-            OutlinedTextField(
-                value = nonStriker,
-                onValueChange = { nonStriker = it },
-                label = { Text(text = stringResource(id = R.string.non_striker)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = BorderGray
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showNonStrikerDialog = true }
+                ) {
+                    OutlinedTextField(
+                        value = nonStriker,
+                        onValueChange = {},
+                        readOnly = true,
+                        enabled = false,
+                        label = { Text(text = stringResource(id = R.string.non_striker)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showNonStrikerDialog) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledBorderColor = BorderGray,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            disabledTrailingIconColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
+
+                if (showNonStrikerDialog) {
+                    PlayerSelectionDialog(
+                        title = "Select Non-Striker",
+                        players = availableBatsmen,
+                        selectedPlayerName = nonStriker,
+                        excludePlayerName1 = striker,
+                        excludePlayerName2 = bowler,
+                        onPlayerSelected = { nonStriker = it },
+                        onDismissRequest = { showNonStrikerDialog = false }
+                    )
+                }
+            } else {
+                OutlinedTextField(
+                    value = striker,
+                    onValueChange = { striker = it },
+                    label = { Text(text = stringResource(id = R.string.striker_facing_first)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = BorderGray
+                    )
                 )
-            )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = nonStriker,
+                    onValueChange = { nonStriker = it },
+                    label = { Text(text = stringResource(id = R.string.non_striker)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = BorderGray
+                    )
+                )
+            }
 
             Spacer(modifier = Modifier.height(28.dp))
 
@@ -219,18 +308,54 @@ fun InningsSetupScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
-                value = bowler,
-                onValueChange = { bowler = it },
-                label = { Text(text = "Bowler Name") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = BorderGray
+            if (isTournamentMatch) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showBowlerDialog = true }
+                ) {
+                    OutlinedTextField(
+                        value = bowler,
+                        onValueChange = {},
+                        readOnly = true,
+                        enabled = false,
+                        label = { Text(text = "Bowler Name") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showBowlerDialog) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledBorderColor = BorderGray,
+                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            disabledTrailingIconColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
+
+                if (showBowlerDialog) {
+                    PlayerSelectionDialog(
+                        title = "Select Opening Bowler",
+                        players = availableBowlers,
+                        selectedPlayerName = bowler,
+                        excludePlayerName1 = striker,
+                        excludePlayerName2 = nonStriker,
+                        onPlayerSelected = { bowler = it },
+                        onDismissRequest = { showBowlerDialog = false }
+                    )
+                }
+            } else {
+                OutlinedTextField(
+                    value = bowler,
+                    onValueChange = { bowler = it },
+                    label = { Text(text = "Bowler Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = BorderGray
+                    )
                 )
-            )
+            }
 
             Spacer(modifier = Modifier.height(48.dp))
 
@@ -260,3 +385,4 @@ fun InningsSetupScreen(
         }
     }
 }
+
