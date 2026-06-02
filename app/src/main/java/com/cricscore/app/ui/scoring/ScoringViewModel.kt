@@ -159,13 +159,84 @@ class ScoringViewModel @Inject constructor(
     private val _isTournamentMatch = MutableStateFlow(false)
     val isTournamentMatch: StateFlow<Boolean> = _isTournamentMatch.asStateFlow()
 
-    private val _availableBatsmen = MutableStateFlow<List<TeamPlayer>>(emptyList())
-    val availableBatsmen: StateFlow<List<TeamPlayer>> = _availableBatsmen.asStateFlow()
-
-    private val _availableBowlers = MutableStateFlow<List<TeamPlayer>>(emptyList())
-    val availableBowlers: StateFlow<List<TeamPlayer>> = _availableBowlers.asStateFlow()
-
     private var linkedFixture: Fixture? = null
+
+    val availableBatsmen: StateFlow<List<TeamPlayer>> = combine(
+        innings,
+        isTournamentMatch,
+        batsmen
+    ) { inn, isTourney, batsList ->
+        Triple(inn, isTourney, batsList)
+    }.flatMapLatest { (inn, isTourney, batsList) ->
+        if (inn == null || !isTourney) {
+            flowOf(emptyList())
+        } else {
+            flow {
+                val fixture = linkedFixture ?: tournamentRepository.getFixtureByLinkedMatchId(inn.matchId)
+                if (fixture == null) {
+                    emit(emptyList())
+                } else {
+                    val batting = inn.battingTeam
+                    val battingTeamId = if (batting.trim().equals(fixture.team1Name.trim(), ignoreCase = true)) fixture.team1Id else fixture.team2Id
+                    
+                    val p11Batsmen = playingElevenRepository.getPlayingElevenSync(fixture.id, battingTeamId)
+                    val freshSquadBatting = teamPlayerRepository.getPlayersByTeamSync(battingTeamId)
+                    
+                    val alreadyBattedNames = batsList.map { it.playerName.trim().lowercase() }.toSet()
+                    
+                    val batsmenTeamPlayers = p11Batsmen.mapNotNull { p11 ->
+                        freshSquadBatting.find { it.id == p11.playerId } ?: TeamPlayer(
+                            id = p11.playerId,
+                            teamId = battingTeamId,
+                            tournamentId = fixture.tournamentId,
+                            playerName = p11.playerName,
+                            isCaptain = p11.isCaptain,
+                            isWicketKeeper = p11.isWicketKeeper
+                        )
+                    }.filter { player ->
+                        !alreadyBattedNames.contains(player.playerName.trim().lowercase())
+                    }
+                    emit(batsmenTeamPlayers)
+                }
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val availableBowlers: StateFlow<List<TeamPlayer>> = combine(
+        innings,
+        isTournamentMatch
+    ) { inn, isTourney ->
+        Pair(inn, isTourney)
+    }.flatMapLatest { (inn, isTourney) ->
+        if (inn == null || !isTourney) {
+            flowOf(emptyList())
+        } else {
+            flow {
+                val fixture = linkedFixture ?: tournamentRepository.getFixtureByLinkedMatchId(inn.matchId)
+                if (fixture == null) {
+                    emit(emptyList())
+                } else {
+                    val bowling = inn.bowlingTeam
+                    val bowlingTeamId = if (bowling.trim().equals(fixture.team1Name.trim(), ignoreCase = true)) fixture.team1Id else fixture.team2Id
+                    
+                    val p11Bowlers = playingElevenRepository.getAvailableBowlers(fixture.id, bowlingTeamId)
+                    val freshSquadBowling = teamPlayerRepository.getPlayersByTeamSync(bowlingTeamId)
+                    
+                    val bowlersTeamPlayers = p11Bowlers.mapNotNull { p11 ->
+                        freshSquadBowling.find { it.id == p11.playerId } ?: TeamPlayer(
+                            id = p11.playerId,
+                            teamId = bowlingTeamId,
+                            tournamentId = fixture.tournamentId,
+                            playerName = p11.playerName,
+                            isCaptain = p11.isCaptain,
+                            isWicketKeeper = p11.isWicketKeeper
+                        )
+                    }
+                    emit(bowlersTeamPlayers)
+                }
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
         // Collect first innings runs once inningsNumber becomes 2
@@ -176,58 +247,6 @@ class ScoringViewModel @Inject constructor(
                     _firstInningsRuns.value = firstInn?.totalRuns ?: 0
                 }
             }
-        }
-
-        // Collect innings changes to load available players
-        viewModelScope.launch {
-            innings.collect { inn ->
-                if (inn != null && _isTournamentMatch.value) {
-                    loadAvailablePlayers()
-                }
-            }
-        }
-    }
-
-    fun loadAvailablePlayers() {
-        val fixture = linkedFixture ?: return
-        val inn = innings.value ?: return
-        val batting = inn.battingTeam
-        val bowling = inn.bowlingTeam
-
-        viewModelScope.launch {
-            val battingTeamId = if (batting == fixture.team1Name) fixture.team1Id else fixture.team2Id
-            val bowlingTeamId = if (bowling == fixture.team1Name) fixture.team1Id else fixture.team2Id
-
-            val p11Batsmen = playingElevenRepository.getAvailableBatsmen(fixture.id, battingTeamId)
-            val p11Bowlers = playingElevenRepository.getAvailableBowlers(fixture.id, bowlingTeamId)
-
-            val freshSquadBatting = teamPlayerRepository.getPlayersByTeamSync(battingTeamId)
-            val freshSquadBowling = teamPlayerRepository.getPlayersByTeamSync(bowlingTeamId)
-
-            val batsmenTeamPlayers = p11Batsmen.mapNotNull { p11 ->
-                freshSquadBatting.find { it.id == p11.playerId } ?: TeamPlayer(
-                    id = p11.playerId,
-                    teamId = battingTeamId,
-                    tournamentId = fixture.tournamentId,
-                    playerName = p11.playerName,
-                    isCaptain = p11.isCaptain,
-                    isWicketKeeper = p11.isWicketKeeper
-                )
-            }
-
-            val bowlersTeamPlayers = p11Bowlers.mapNotNull { p11 ->
-                freshSquadBowling.find { it.id == p11.playerId } ?: TeamPlayer(
-                    id = p11.playerId,
-                    teamId = bowlingTeamId,
-                    tournamentId = fixture.tournamentId,
-                    playerName = p11.playerName,
-                    isCaptain = p11.isCaptain,
-                    isWicketKeeper = p11.isWicketKeeper
-                )
-            }
-
-            _availableBatsmen.value = batsmenTeamPlayers
-            _availableBowlers.value = bowlersTeamPlayers
         }
     }
 
@@ -241,11 +260,8 @@ class ScoringViewModel @Inject constructor(
             linkedFixture = fixture
             if (fixture != null) {
                 _isTournamentMatch.value = true
-                loadAvailablePlayers()
             } else {
                 _isTournamentMatch.value = false
-                _availableBatsmen.value = emptyList()
-                _availableBowlers.value = emptyList()
             }
         }
     }
@@ -295,9 +311,6 @@ class ScoringViewModel @Inject constructor(
             nextBatsmanName = nextBatsmanName
         )
         _selectedBowlerForNewOver.value = null
-        if (_isTournamentMatch.value) {
-            loadAvailablePlayers()
-        }
     }
 
     fun undoLastBall() {
@@ -305,9 +318,6 @@ class ScoringViewModel @Inject constructor(
             val mid = _matchId.value
             val inum = _inningsNumber.value
             undoLastBallUseCase(mid, inum)
-            if (_isTournamentMatch.value) {
-                loadAvailablePlayers()
-            }
         }
     }
 

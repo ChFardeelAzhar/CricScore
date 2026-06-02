@@ -26,8 +26,9 @@ fun PlayerSelectionDialog(
     title: String,
     players: List<TeamPlayer>,
     selectedPlayerName: String,
-    excludePlayerName1: String,
-    excludePlayerName2: String,
+    excludePlayerName1: String = "",
+    excludePlayerName2: String = "",
+    excludePlayerNames: Set<String> = emptySet(),
     onPlayerSelected: (String) -> Unit,
     onDismissRequest: () -> Unit
 ) {
@@ -83,7 +84,8 @@ fun PlayerSelectionDialog(
                         ) {
                             rowPlayers.forEach { player ->
                                 val isAlreadySelectedElsewhere = player.playerName.trim().equals(excludePlayerName1.trim(), ignoreCase = true) ||
-                                        player.playerName.trim().equals(excludePlayerName2.trim(), ignoreCase = true)
+                                        player.playerName.trim().equals(excludePlayerName2.trim(), ignoreCase = true) ||
+                                        excludePlayerNames.any { it.trim().equals(player.playerName.trim(), ignoreCase = true) }
                                 val isCurrentSelection = player.playerName.trim().equals(selectedPlayerName.trim(), ignoreCase = true)
 
                                 Box(

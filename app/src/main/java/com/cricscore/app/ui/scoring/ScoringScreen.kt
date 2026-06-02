@@ -704,6 +704,7 @@ fun ScoringScreen(
             containerColor = MaterialTheme.colorScheme.surface
         ) {
             var bowlerName by remember { mutableStateOf("") }
+            var showBowlerSquadDialog by remember { mutableStateOf(false) }
             
             // Check if bowlerName matches any recent bowler name (excluding the one who just bowled)
             val selectedBowler = remember(bowlerName, bowlers, lastBowlerName) {
@@ -818,97 +819,83 @@ fun ScoringScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Bowlers List
-                if (isTournamentMatch) {
+                // Recent Bowlers list
+                if (bowlers.isNotEmpty()) {
                     Text(
-                        text = "SELECT BOWLER FROM SQUAD",
+                        text = "RECENT BOWLERS",
                         fontFamily = DMSans,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
                         color = TextGray
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-
-                    val playersPerSideVal = match?.playersPerSide ?: 11
-                    val totalOversVal = match?.oversLimit ?: 20
-                    val maxOversPerBowler = kotlin.math.ceil(totalOversVal.toFloat() / playersPerSideVal.toFloat()).toInt()
-
-                    val chunkedBowlers = availableBowlers.chunked(3)
+                    
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        chunkedBowlers.forEach { rowBowlers ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                rowBowlers.forEach { p ->
-                                    val bowlerInn = bowlers.firstOrNull { it.playerName == p.playerName }
-                                    val ballsBowledVal = bowlerInn?.ballsBowled ?: 0
-                                    val oversBowledVal = ballsBowledVal / 6
-
-                                    val isJustBowled = p.playerName.equals(lastBowlerName, ignoreCase = true)
-                                    val isQuotaCompleted = oversBowledVal >= maxOversPerBowler
-                                    val isSelected = bowlerName == p.playerName
-                                    val isDisabled = isJustBowled || isQuotaCompleted
-
-                                    val subtitleText = if (bowlerInn != null) {
-                                        "${bowlerInn.runsConceded}/${bowlerInn.wickets} (${CricketCalculator.ballsToOversString(bowlerInn.ballsBowled)} Ov)"
-                                    } else {
-                                        "0/0 (0 Ov)"
-                                    }
-
-                                    Box(
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        PlayerGridItem(
-                                            player = p,
-                                            isSelected = isSelected,
-                                            isDisabled = isDisabled,
-                                            onClick = { bowlerName = p.playerName },
-                                            subtitle = subtitleText
-                                        )
-                                    }
+                        bowlers.forEach { bowler ->
+                            val isJustBowled = bowler.playerName.equals(lastBowlerName, ignoreCase = true)
+                            val isSelected = bowlerName.trim().equals(bowler.playerName.trim(), ignoreCase = true)
+                            
+                            RecentBowlerCard(
+                                bowler = bowler,
+                                isJustBowled = isJustBowled,
+                                isSelected = isSelected,
+                                onClick = {
+                                    bowlerName = bowler.playerName
                                 }
-                                repeat(3 - rowBowlers.size) {
-                                    Spacer(modifier = Modifier.weight(1f))
-                                }
-                            }
+                            )
                         }
                     }
                     Spacer(modifier = Modifier.height(24.dp))
-                } else {
-                    // Recent Bowlers list
-                    if (bowlers.isNotEmpty()) {
-                        Text(
-                            text = "RECENT BOWLERS",
-                            fontFamily = DMSans,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            color = TextGray
+                }
+
+                if (isTournamentMatch) {
+                    Text(
+                        text = "SELECT NEXT BOWLER FROM SQUAD",
+                        fontFamily = DMSans,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        color = TextGray
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showBowlerSquadDialog = true }
+                    ) {
+                        OutlinedTextField(
+                            value = bowlerName,
+                            onValueChange = {},
+                            readOnly = true,
+                            enabled = false,
+                            placeholder = { Text("Select bowler from squad...", color = TextGray) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showBowlerSquadDialog) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                                disabledBorderColor = BorderGray,
+                                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                disabledTrailingIconColor = MaterialTheme.colorScheme.primary
+                            )
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            bowlers.forEach { bowler ->
-                                val isJustBowled = bowler.playerName.equals(lastBowlerName, ignoreCase = true)
-                                val isSelected = selectedBowler?.playerName == bowler.playerName
-                                
-                                RecentBowlerCard(
-                                    bowler = bowler,
-                                    isJustBowled = isJustBowled,
-                                    isSelected = isSelected,
-                                    onClick = {
-                                        bowlerName = bowler.playerName
-                                    }
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(24.dp))
                     }
 
+                    if (showBowlerSquadDialog) {
+                        val recentBowlerNames = bowlers.map { it.playerName.trim().lowercase() }.toSet()
+                        PlayerSelectionDialog(
+                            title = "Select Next Bowler",
+                            players = availableBowlers,
+                            selectedPlayerName = bowlerName,
+                            excludePlayerNames = recentBowlerNames,
+                            onPlayerSelected = { bowlerName = it },
+                            onDismissRequest = { showBowlerSquadDialog = false }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                } else {
                     // Input Field for Bowler Name
                     Text(
                         text = "ENTER NEXT BOWLER",
