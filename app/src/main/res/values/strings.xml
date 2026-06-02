@@ -37,8 +37,8 @@
 
     <!-- Innings Setup -->
     <string name="innings_setup">Innings Setup</string>
-    <string name="batting_label">BATTING</string>
-    <string name="bowling_label">BOWLING</string>
+    <string name="batting_label">🏏 BATTING</string>
+    <string name="bowling_label">🥎 BOWLING</string>
     <string name="opening_batsmen">OPENING BATSMEN</string>
     <string name="striker_facing_first">Striker (facing first)</string>
     <string name="non_striker">Non-Striker</string>

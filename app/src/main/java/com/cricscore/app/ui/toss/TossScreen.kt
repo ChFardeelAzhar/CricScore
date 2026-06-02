@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -210,21 +212,12 @@ fun TossScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = "STEP 2 OF 3",
-                            fontFamily = DMSans,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp,
-                            color = LimeAccent
-                        )
-                        Text(
-                            text = stringResource(id = R.string.coin_toss),
-                            fontFamily = BarlowCondensed,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 24.sp
-                        )
-                    }
+                    Text(
+                        text = stringResource(id = R.string.coin_toss),
+                        fontFamily = BarlowCondensed,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -362,12 +355,7 @@ fun TossScreen(
                                     horizontalArrangement = Arrangement.Center,
                                     modifier = Modifier.padding(horizontal = 8.dp)
                                 ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(8.dp)
-                                            .background(if (isSelected) NavyDark else WicketRed, CircleShape)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
+
                                     Text(
                                         text = team,
                                         fontFamily = DMSans,
@@ -435,7 +423,7 @@ fun TossScreen(
                         )
                     ) {
                         Text(
-                            text = "Choose Decision →",
+                            text = "Choose Decision",
                             fontFamily = DMSans,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
@@ -606,13 +594,6 @@ fun TossScreen(
                             fontFamily = DMSans,
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "→",
-                            fontFamily = DMSans,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
                         )
                     }
                 }
