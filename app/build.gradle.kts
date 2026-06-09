@@ -72,4 +72,8 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    // google icons
+    implementation("androidx.compose.material:material-icons-extended")
+
 }

@@ -1,5 +1,6 @@
 package com.cricscore.app.ui.tournament.addteams
 
+import android.graphics.Color.parseColor
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,15 +14,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.alpha
 import com.cricscore.app.R
 import com.cricscore.app.ui.theme.*
 import kotlinx.coroutines.launch
+import androidx.core.graphics.toColorInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,7 +48,15 @@ fun TournamentAddTeamsScreen(
         "#9B59B6", // purple
         "#1ABC9C"  // teal
     )
+    
+    // Auto-select first color
     var selectedColor by remember { mutableStateOf(presetColors[0]) }
+    
+    // Update selected color when teams change to pick the next unused color
+    LaunchedEffect(teams.size) {
+        selectedColor = presetColors[teams.size % presetColors.size]
+    }
+    
     var duplicateError by remember { mutableStateOf(false) }
 
     var showConfirmationDialog by remember { mutableStateOf(false) }
@@ -83,27 +95,25 @@ fun TournamentAddTeamsScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(4.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Bottom
             ) {
                 Text(
-                    text = "STEP 2 OF 2 — ADD TEAMS",
+                    text = "TEAMS ADDED",
                     fontFamily = DMSans,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.secondary,
+                    color = TextGray,
                     letterSpacing = 1.sp
                 )
-                
                 Text(
-                    text = stringResource(id = R.string.teams_added_count, teams.size, totalTeamsLimit),
+                    text = "${teams.size} / $totalTeamsLimit",
                     fontFamily = BarlowCondensed,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
+                    fontSize = 18.sp,
                     color = if (teams.size == totalTeamsLimit) LimeAccent else TextWhite
                 )
             }
@@ -113,10 +123,10 @@ fun TournamentAddTeamsScreen(
                 progress = { teams.size.toFloat() / totalTeamsLimit },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(6.dp)
-                    .background(BorderGray, RoundedCornerShape(3.dp)),
-                color = if (teams.size == totalTeamsLimit) LimeAccent else MaterialTheme.colorScheme.secondary,
-                trackColor = BorderGray
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                color = if (teams.size == totalTeamsLimit) LimeAccent else MaterialTheme.colorScheme.primary,
+                trackColor = NavySurface
             )
 
             // Input fields section at the top of lists for quick typing
@@ -129,59 +139,87 @@ fun TournamentAddTeamsScreen(
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
                             text = "ADD NEW TEAM",
-                            fontFamily = BarlowCondensed,
+                            fontFamily = DMSans,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            color = TextWhite
+                            fontSize = 13.sp,
+                            color = LimeAccent,
+                            letterSpacing = 1.sp
                         )
+
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         OutlinedTextField(
                             value = teamNameInput,
                             onValueChange = {
-                                teamNameInput = it
-                                duplicateError = false
+                                if (it.length <= 20) {
+                                    teamNameInput = it
+                                    duplicateError = false
+                                }
                             },
-                            label = { Text("Team Name") },
-                            placeholder = { Text("e.g. Mumbai Strikers") },
+                            placeholder = { 
+                                Text(
+                                    text = "Team name",
+                                    color = TextGray.copy(alpha = 0.5f),
+                                    fontSize = 15.sp
+                                ) 
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_groups),
+                                    contentDescription = null,
+                                    tint = TextGray.copy(alpha = 0.5f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            },
                             supportingText = {
-                                if (duplicateError) {
-                                    Text(
-                                        text = stringResource(id = R.string.duplicate_team_name),
-                                        color = ErrorRed
-                                    )
-                                } else {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
                                     Text(
                                         text = "${teamNameInput.length}/20",
-                                        modifier = Modifier.fillMaxWidth(),
-                                        textAlign = androidx.compose.ui.text.style.TextAlign.End
+                                        color = if (duplicateError) ErrorRed else TextGray.copy(alpha = 0.5f),
+                                        fontSize = 11.sp
                                     )
                                 }
                             },
                             isError = duplicateError,
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                focusedContainerColor = NavyDark.copy(alpha = 0.5f),
+                                unfocusedContainerColor = NavyDark.copy(alpha = 0.5f),
+                                focusedBorderColor = BorderGray,
                                 unfocusedBorderColor = BorderGray,
-                                focusedLabelColor = MaterialTheme.colorScheme.primary,
-                                unfocusedLabelColor = TextGray,
                                 focusedTextColor = TextWhite,
-                                unfocusedTextColor = TextWhite
+                                unfocusedTextColor = TextWhite,
+                                cursorColor = LimeAccent
                             )
                         )
 
-                        // Color picker Row
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        if (duplicateError) {
                             Text(
-                                text = "TEAM COLOR INDICATOR",
+                                text = stringResource(id = R.string.duplicate_team_name),
+                                color = ErrorRed,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+                            )
+                        }
+
+                        // Color picker Row
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                text = "TEAM COLOR",
                                 fontFamily = DMSans,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
-                                color = TextGray
+                                color = TextGray,
+                                letterSpacing = 1.sp
                             )
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -193,10 +231,10 @@ fun TournamentAddTeamsScreen(
                                     val color = Color(android.graphics.Color.parseColor(hex))
                                     Box(
                                         modifier = Modifier
-                                            .size(36.dp)
+                                            .size(38.dp)
                                             .background(color, CircleShape)
                                             .border(
-                                                width = if (isColorSelected) 3.dp else 0.dp,
+                                                width = if (isColorSelected) 2.dp else 0.dp,
                                                 color = TextWhite,
                                                 shape = CircleShape
                                             )
@@ -208,7 +246,7 @@ fun TournamentAddTeamsScreen(
                                                 painter = painterResource(id = R.drawable.ic_check),
                                                 contentDescription = "Selected",
                                                 tint = TextWhite,
-                                                modifier = Modifier.size(16.dp)
+                                                modifier = Modifier.size(18.dp)
                                             )
                                         }
                                     }
@@ -216,85 +254,151 @@ fun TournamentAddTeamsScreen(
                             }
                         }
 
+                        Spacer(modifier = Modifier.height(12.dp))
+
                         Button(
                             onClick = {
                                 val success = viewModel.addTeam(tournamentId, teamNameInput, selectedColor)
                                 if (success) {
                                     teamNameInput = ""
-                                    // pick a different color for the next team automatically
-                                    val currentSize = teams.size
-                                    if (currentSize < presetColors.size) {
-                                        selectedColor = presetColors[currentSize]
-                                    }
+                                    // selectedColor is updated via LaunchedEffect
                                 } else {
                                     duplicateError = true
                                 }
                             },
-                            enabled = teamNameInput.isNotBlank() && teamNameInput.length <= 20,
+                            enabled = teamNameInput.isNotBlank(),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(44.dp),
-                            shape = RoundedCornerShape(8.dp),
+                                .height(52.dp),
+                            shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = NavyDark
+                                containerColor = LimeAccent,
+                                contentColor = NavyDark,
+                                disabledContainerColor = BorderGray,
+                                disabledContentColor = TextGray
                             )
                         ) {
-                            Text(
-                                text = "+ Add Team",
-                                fontFamily = DMSans,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_plus),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Add Team",
+                                    fontFamily = DMSans,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                )
+                            }
                         }
                     }
                 }
             }
+
+            Text(
+                text = "YOUR TEAMS",
+                fontFamily = DMSans,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                color = TextGray,
+                letterSpacing = 1.sp
+            )
 
             // Teams list
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 8.dp)
             ) {
                 items(teams) { team ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        border = BorderStroke(1.dp, BorderGray)
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = NavySurface),
+                        border = BorderStroke(1.dp, BorderGray.copy(alpha = 0.5f))
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                                .padding(12.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+//                                // Color Indicator Dot
+//                                Box(
+//                                    modifier = Modifier
+//                                        .padding(horizontal = 8.dp)
+//                                        .size(10.dp)
+//                                        .background(Color(android.graphics.Color.parseColor(team.colorHex)), CircleShape)
+//                                )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                // Icon Box
                                 Box(
                                     modifier = Modifier
-                                        .size(12.dp)
-                                        .background(Color(android.graphics.Color.parseColor(team.colorHex)), CircleShape)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = team.teamName,
-                                    fontFamily = DMSans,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp,
-                                    color = TextWhite
-                                )
+                                        .size(44.dp)
+                                        .background(Color(team.colorHex.toColorInt()), RoundedCornerShape(12.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_bat_bowl),
+                                        contentDescription = null,
+                                        tint = Color.Unspecified, // Keep original vector colors if any
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(16.dp))
+
+                                // Team Info
+                                Column {
+                                    Text(
+                                        text = team.teamName,
+                                        fontFamily = DMSans,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp,
+                                        color = TextWhite
+                                    )
+                                    Surface(
+                                        color = Color(parseColor(team.colorHex)).copy(alpha = 0.15f),
+                                        shape = RoundedCornerShape(4.dp)
+                                    ) {
+                                        Text(
+                                            text = "Cricket Team",
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                            fontFamily = DMSans,
+                                            fontSize = 10.sp,
+                                            color = Color(parseColor(team.colorHex)),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
                             }
+
+                            // Remove Button
                             IconButton(
                                 onClick = { viewModel.removeTeam(team.teamName) },
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(NavyDark, RoundedCornerShape(8.dp))
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.ic_close),
                                     contentDescription = "Remove",
-                                    tint = ErrorRed,
-                                    modifier = Modifier.size(16.dp)
+                                    tint = TextGray.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(12.dp)
                                 )
                             }
                         }
@@ -308,20 +412,34 @@ fun TournamentAddTeamsScreen(
                 enabled = teams.size == totalTeamsLimit,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp)
-                    .height(50.dp),
-                shape = RoundedCornerShape(10.dp),
+                    .padding(vertical = 12.dp)
+                    .height(54.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    contentColor = TextWhite
-                )
+                    containerColor = LimeAccent,
+                    contentColor = NavyDark,
+                    disabledContainerColor = NavySurface,
+                    disabledContentColor = TextGray.copy(alpha = 0.5f)
+                ),
+                border = if (teams.size != totalTeamsLimit) BorderStroke(1.dp, BorderGray.copy(alpha = 0.5f)) else null
             ) {
-                Text(
-                    text = "Generate Fixtures →",
-                    fontFamily = DMSans,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_play),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Generate Fixtures",
+                        fontFamily = DMSans,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
             }
         }
 

@@ -115,7 +115,7 @@
     <!-- Tournaments -->
     <string name="tournaments">Tournaments</string>
     <string name="create_tournament">Create Tournament</string>
-    <string name="tournament_name_hint">e.g. Gully Premier League 2026</string>
+    <string name="tournament_name_hint">Tamboo Cricket League</string>
     <string name="venue_hint">e.g. Main Ground (Optional)</string>
     <string name="add_teams">Add Teams</string>
     <string name="teams_added_count">%1$d / %2$d Teams Added</string>

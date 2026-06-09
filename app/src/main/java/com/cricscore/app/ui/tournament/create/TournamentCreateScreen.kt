@@ -75,15 +75,6 @@ fun TournamentCreateScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "STEP 1 OF 2 — TOURNAMENT SETUP",
-                fontFamily = DMSans,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.secondary,
-                letterSpacing = 1.sp
-            )
-
             // Section 1: Tournament Details
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -93,11 +84,11 @@ fun TournamentCreateScreen(
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
                         text = "TOURNAMENT DETAILS",
-                        fontFamily = BarlowCondensed,
+                        fontFamily = DMSans,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = TextWhite
@@ -166,7 +157,7 @@ fun TournamentCreateScreen(
                 ) {
                     Text(
                         text = "NUMBER OF TEAMS",
-                        fontFamily = BarlowCondensed,
+                        fontFamily = DMSans,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = TextWhite
@@ -272,7 +263,7 @@ fun TournamentCreateScreen(
                 ) {
                     Text(
                         text = "MATCH CONFIGURATION",
-                        fontFamily = BarlowCondensed,
+                        fontFamily = DMSans,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = TextWhite
@@ -319,6 +310,56 @@ fun TournamentCreateScreen(
                                 }
                             }
                         }
+
+                        // Stepper for custom overs count (1 to 90)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Custom Overs Count:",
+                                fontFamily = DMSans,
+                                fontSize = 13.sp,
+                                color = TextGray
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                IconButton(
+                                    onClick = { if (oversPerMatch > 1) viewModel.setOversPerMatch(oversPerMatch - 1) },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_undo),
+                                        contentDescription = "Decrease Overs",
+                                        tint = if (oversPerMatch > 1) TextWhite else TextGray,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                Text(
+                                    text = oversPerMatch.toString(),
+                                    fontFamily = BarlowCondensed,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp,
+                                    color = TextWhite
+                                )
+                                IconButton(
+                                    onClick = { if (oversPerMatch < 90) viewModel.setOversPerMatch(oversPerMatch + 1) },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_plus),
+                                        contentDescription = "Increase Overs",
+                                        tint = if (oversPerMatch < 90) TextWhite else TextGray,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     // Players per side
@@ -358,6 +399,56 @@ fun TournamentCreateScreen(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
                                         color = if (isSelected) MaterialTheme.colorScheme.primary else TextWhite
+                                    )
+                                }
+                            }
+                        }
+
+                        // Stepper for custom players count (2 to 16)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Custom Players Count:",
+                                fontFamily = DMSans,
+                                fontSize = 13.sp,
+                                color = TextGray
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                IconButton(
+                                    onClick = { if (playersPerSide > 2) viewModel.setPlayersPerSide(playersPerSide - 1) },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_undo),
+                                        contentDescription = "Decrease Players",
+                                        tint = if (playersPerSide > 2) TextWhite else TextGray,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                Text(
+                                    text = playersPerSide.toString(),
+                                    fontFamily = BarlowCondensed,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp,
+                                    color = TextWhite
+                                )
+                                IconButton(
+                                    onClick = { if (playersPerSide < 16) viewModel.setPlayersPerSide(playersPerSide + 1) },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_plus),
+                                        contentDescription = "Increase Players",
+                                        tint = if (playersPerSide < 16) TextWhite else TextGray,
+                                        modifier = Modifier.size(16.dp)
                                     )
                                 }
                             }

@@ -2,9 +2,11 @@ package com.cricscore.app.ui.tournament.list
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -67,19 +70,27 @@ fun TournamentListScreen(
                 contentColor = NavyDark,
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_plus),
-                    contentDescription = "Create Tournament",
-                    tint = NavyDark
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_plus),
+                        contentDescription = "Create Tournament",
+                        tint = NavyDark,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Text("Create Tournament")
+                }
+
             }
         }
     ) { paddingValues ->
         if (tournaments.isEmpty()) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                    .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -87,11 +98,10 @@ fun TournamentListScreen(
                     verticalArrangement = Arrangement.Center,
                     modifier = Modifier.padding(24.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_trophy),
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_winning_trophy),
                         contentDescription = null,
-                        tint = TextGray,
-                        modifier = Modifier.size(72.dp)
+                        modifier = Modifier.size(130.dp)
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
@@ -101,29 +111,7 @@ fun TournamentListScreen(
                         fontSize = 18.sp,
                         color = TextWhite
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Create your first league to generate fixtures and view points tables.",
-                        fontFamily = DMSans,
-                        fontSize = 14.sp,
-                        color = TextGray,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(
-                        onClick = onNavigateToCreate,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = NavyDark
-                        ),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text(
-                            text = "Create Tournament",
-                            fontFamily = DMSans,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+
                 }
             }
         } else {
@@ -285,7 +273,10 @@ fun TournamentItem(
                         fontSize = 11.sp,
                         color = OrangeTertiary,
                         modifier = Modifier
-                            .background(OrangeTertiary.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                            .background(
+                                OrangeTertiary.copy(alpha = 0.15f),
+                                RoundedCornerShape(4.dp)
+                            )
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
