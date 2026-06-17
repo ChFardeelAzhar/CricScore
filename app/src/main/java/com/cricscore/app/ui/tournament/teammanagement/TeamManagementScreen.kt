@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cricscore.app.R
 import com.cricscore.app.ui.theme.*
+import androidx.core.graphics.toColorInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,69 +51,68 @@ fun TeamManagementScreen(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(id = R.string.manage_squads),
-                        fontFamily = BarlowCondensed,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_back_arrow),
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onBackground
+            Column {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = stringResource(id = R.string.manage_squads),
+                            fontFamily = BarlowCondensed,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp
                         )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
-            )
-        },
-        bottomBar = {
-            if (totalTeams > 0) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, BorderGray)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "$fullSquadsCount of $totalTeams teams have full squads",
-                                fontFamily = DMSans,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 14.sp,
-                                color = TextWhite
-                            )
-                            Text(
-                                text = "Req: $requiredPlayers players",
-                                fontFamily = DMSans,
-                                fontSize = 12.sp,
-                                color = TextGray
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_back_arrow),
+                                contentDescription = "Back",
+                                tint = MaterialTheme.colorScheme.onBackground
                             )
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        val progress = if (totalTeams > 0) fullSquadsCount.toFloat() / totalTeams else 0f
-                        LinearProgressIndicator(
-                            progress = progress,
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                )
+                if (totalTeams > 0) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).clip(RoundedCornerShape(16.dp)),
+                        color = MaterialTheme.colorScheme.surface,
+                    ) {
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(6.dp)
-                                .clip(RoundedCornerShape(3.dp)),
-                            color = LimeAccent,
-                            trackColor = BorderGray
-                        )
+                                .padding(16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "$fullSquadsCount of $totalTeams teams have full squads",
+                                    fontFamily = DMSans,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 14.sp,
+                                    color = TextWhite
+                                )
+                                Text(
+                                    text = "Req: $requiredPlayers players",
+                                    fontFamily = DMSans,
+                                    fontSize = 12.sp,
+                                    color = TextGray
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            val progress = if (totalTeams > 0) fullSquadsCount.toFloat() / totalTeams else 0f
+                            LinearProgressIndicator(
+                                progress = progress,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp)),
+                                color = LimeAccent,
+                                trackColor = BorderGray
+                            )
+                        }
                     }
                 }
             }
@@ -144,7 +144,7 @@ fun TeamManagementScreen(
                 items(teamDetails, key = { it.team.id }) { detail ->
                     val team = detail.team
                     val parsedColor = try {
-                        Color(android.graphics.Color.parseColor(team.colorHex))
+                        Color(team.colorHex.toColorInt())
                     } catch (e: Exception) {
                         BlueSecondary
                     }
@@ -164,19 +164,19 @@ fun TeamManagementScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             // Left team icon circle
                             Box(
                                 modifier = Modifier
-                                    .size(48.dp)
-                                    .background(parsedColor, CircleShape),
+                                    .size(58.dp)
+                                    .background(parsedColor, RoundedCornerShape(16.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = team.logoEmoji.ifBlank { team.teamName.take(1).uppercase() },
-                                    fontSize = 24.sp
+                                    fontSize = 28.sp
                                 )
                             }
                             Spacer(modifier = Modifier.width(16.dp))
@@ -201,27 +201,28 @@ fun TeamManagementScreen(
                                     fontSize = 13.sp,
                                     color = if (detail.captainName != null) OrangeTertiary else TextGray
                                 )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    if (detail.playerCount == 0) {
-                                        Text(
-                                            text = "⚠ 0 Players",
-                                            fontFamily = DMSans,
-                                            fontSize = 12.sp,
-                                            color = ErrorRed,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                    } else {
-                                        Text(
-                                            text = "${detail.playerCount} Players",
-                                            fontFamily = DMSans,
-                                            fontSize = 12.sp,
-                                            color = if (isSquadComplete) LimeAccent else TextGray
-                                        )
-                                    }
-                                }
+
                             }
 
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (detail.playerCount == 0) {
+                                    Text(
+                                        text = "⚠ 0 Players",
+                                        fontFamily = DMSans,
+                                        fontSize = 12.sp,
+                                        color = ErrorRed,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                } else {
+                                    Text(
+                                        text = "${detail.playerCount} Players",
+                                        fontFamily = DMSans,
+                                        fontSize = 12.sp,
+                                        color = if (isSquadComplete) LimeAccent else TextGray
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.width(5.dp))
                             // Right completeness indicator & arrow
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -253,12 +254,6 @@ fun TeamManagementScreen(
                                     }
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_play), // serves as chevron -> arrow
-                                    contentDescription = "Go",
-                                    tint = TextGray,
-                                    modifier = Modifier.size(12.dp)
-                                )
                             }
                         }
                     }
