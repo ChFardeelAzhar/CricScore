@@ -88,14 +88,6 @@ class RecordBallUseCase @Inject constructor(
                     currentNonStrikerName = newName
                 }
             }
-
-            // If the last ball completed the over, we rotate ends BEFORE this new ball is bowled
-            val totalLegalInLastOver = ballsList.filter { it.overNumber == lastBall.overNumber && OversHelper.isLegalBall(it.ballType) }.size
-            if (totalLegalInLastOver == 6 && lastBall.id == ballsList.last().id) {
-                val temp = currentStrikerName
-                currentStrikerName = currentNonStrikerName
-                currentNonStrikerName = temp
-            }
         }
 
         // Get bowler name

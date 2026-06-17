@@ -53,6 +53,7 @@ fun ScorecardScreen(
     val firstInnings by viewModel.firstInnings.collectAsStateWithLifecycle()
     val batsmen by viewModel.batsmen.collectAsStateWithLifecycle()
     val bowlers by viewModel.bowlers.collectAsStateWithLifecycle()
+    val lastBall by viewModel.lastBall.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -359,13 +360,14 @@ fun ScorecardScreen(
                                         modifier = Modifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
+                                        val isStriker = innings?.isCompleted == false && lastBall?.strikerName == batsman.playerName
                                         Text(
-                                            text = batsman.playerName,
+                                            text = if (isStriker) "${batsman.playerName}*" else batsman.playerName,
                                             modifier = Modifier.weight(2.2f),
                                             fontFamily = DMSans,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 14.sp,
-                                            color = TextWhite
+                                            color = if (isStriker) MaterialTheme.colorScheme.primary else TextWhite
                                         )
                                         Text(
                                             text = batsman.runs.toString(),
