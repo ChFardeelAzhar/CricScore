@@ -151,10 +151,8 @@ class SquadManagementViewModel @Inject constructor(
         }
     }
 
-    fun bulkAddPlayers(namesText: String, defaultRole: String) {
-        val lines = namesText.split("\n")
-        val names = lines.map { it.trim() }.filter { it.isNotEmpty() }
-        if (names.isEmpty()) return
+    fun bulkAddPlayers(players: List<Pair<String, String>>) {
+        if (players.isEmpty()) return
 
         val teamVal = _teamId.value
         val tourVal = _tournamentId.value
@@ -164,13 +162,13 @@ class SquadManagementViewModel @Inject constructor(
             var duplicateCount = 0
             var errorMsg: String? = null
 
-            names.forEach { name ->
+            players.forEach { (name, role) ->
                 val result = addPlayerToTeamUseCase(
                     teamId = teamVal,
                     tournamentId = tourVal,
                     name = name,
                     jerseyNumber = 0,
-                    role = defaultRole
+                    role = role
                 )
                 result.onSuccess {
                     addedCount++

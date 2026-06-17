@@ -1,6 +1,7 @@
 package com.cricscore.app.ui.tournament.teammanagement
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -170,13 +171,18 @@ fun TeamManagementScreen(
                             // Left team icon circle
                             Box(
                                 modifier = Modifier
-                                    .size(58.dp)
+                                    .size(48.dp)
                                     .background(parsedColor, RoundedCornerShape(16.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = team.logoEmoji.ifBlank { team.teamName.take(1).uppercase() },
-                                    fontSize = 28.sp
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_bat_bowl),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f))
+                                        .padding(8.dp)
                                 )
                             }
                             Spacer(modifier = Modifier.width(16.dp))
