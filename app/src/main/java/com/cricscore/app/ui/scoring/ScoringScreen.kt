@@ -36,7 +36,6 @@ import com.cricscore.app.core.util.OversHelper
 import com.cricscore.app.domain.model.*
 import com.cricscore.app.ui.theme.*
 import com.cricscore.app.ui.inningssetup.PlayerSelectionDialog
-import com.cricscore.app.ui.inningssetup.PlayerGridItem
 import kotlinx.coroutines.launch
 import java.util.Locale
 

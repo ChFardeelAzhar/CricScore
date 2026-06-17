@@ -2,20 +2,20 @@ package com.cricscore.app.ui.tournament.playingeleven
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +30,21 @@ import androidx.compose.ui.unit.sp
 import com.cricscore.app.R
 import com.cricscore.app.domain.model.TeamPlayer
 import com.cricscore.app.ui.theme.*
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BadgeIndicator(text: String, color: Color) {
+    Text(
+        text = text,
+        fontFamily = DMSans,
+        fontSize = 8.sp,
+        fontWeight = FontWeight.Bold,
+        color = color,
+        modifier = Modifier
+            .background(color.copy(alpha = 0.15f), CircleShape)
+            .padding(horizontal = 10.dp)
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +68,20 @@ fun PlayingElevenScreen(
     val state by viewModel.uiState.collectAsState()
     val event by viewModel.event.collectAsState()
 
+    val sortedPlayers by remember(state.allSquadPlayers) {
+        derivedStateOf {
+            state.allSquadPlayers.sortedBy { player ->
+                when (player.role) {
+                    "BATSMAN" -> 0
+                    "WICKET_KEEPER" -> 1
+                    "ALL_ROUNDER" -> 2
+                    "BOWLER" -> 3
+                    else -> 4
+                }
+            }
+        }
+    }
+
     LaunchedEffect(key1 = event) {
         event?.let { ev ->
             when (ev) {
@@ -60,6 +89,7 @@ fun PlayingElevenScreen(
                     Toast.makeText(context, "Playing XI confirmed!", Toast.LENGTH_SHORT).show()
                     onConfirmSuccess()
                 }
+
                 is PlayingElevenEvent.Error -> {
                     Toast.makeText(context, ev.message, Toast.LENGTH_LONG).show()
                 }
@@ -77,18 +107,31 @@ fun PlayingElevenScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Absolute.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(id = R.string.select_playing_xi),
+                                fontFamily = BarlowCondensed,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            )
+                            Text(
+                                text = state.teamName,
+                                fontFamily = DMSans,
+                                fontSize = 12.sp,
+                                color = TextGray
+                            )
+                        }
                         Text(
-                            text = stringResource(id = R.string.select_playing_xi),
+                            text = "$selectedCount / $playersPerSide Selected",
                             fontFamily = BarlowCondensed,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
-                        Text(
-                            text = state.teamName,
-                            fontFamily = DMSans,
-                            fontSize = 12.sp,
-                            color = TextGray
+                            fontSize = 18.sp,
+                            color = if (isLimitReached) LimeAccent else TextWhite
                         )
                     }
                 },
@@ -132,7 +175,10 @@ fun PlayingElevenScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
                     onClick = onNavigateToSquadSetup,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary, contentColor = NavyDark),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = NavyDark
+                    ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
@@ -148,80 +194,6 @@ fun PlayingElevenScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                // Large Selection Counter & Progress
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(vertical = 12.dp, horizontal = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "$selectedCount / $playersPerSide Selected",
-                        fontFamily = BarlowCondensed,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 30.sp,
-                        color = if (isLimitReached) LimeAccent else TextWhite
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    val progress = selectedCount.toFloat() / playersPerSide
-                    LinearProgressIndicator(
-                        progress = progress,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(3.dp)),
-                        color = if (isLimitReached) LimeAccent else MaterialTheme.colorScheme.primary,
-                        trackColor = BorderGray
-                    )
-                }
-
-                // Selected players strip (horizontal)
-                if (state.selectedPlayers.isNotEmpty()) {
-                    LazyRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(NavyDark)
-                            .padding(vertical = 10.dp, horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        items(state.selectedPlayers, key = { "selected_${it.id}" }) { player ->
-                            InputChip(
-                                selected = true,
-                                onClick = { viewModel.togglePlayerSelection(player) },
-                                label = {
-                                    val name = player.playerName.split(" ").firstOrNull() ?: player.playerName
-                                    Text(
-                                        text = name,
-                                        fontFamily = DMSans,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                },
-                                trailingIcon = {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.ic_close),
-                                        contentDescription = "Remove",
-                                        modifier = Modifier.size(10.dp)
-                                    )
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = InputChipDefaults.inputChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                    selectedLabelColor = MaterialTheme.colorScheme.primary,
-                                    selectedTrailingIconColor = MaterialTheme.colorScheme.primary
-                                ),
-                                border = InputChipDefaults.inputChipBorder(
-                                    selected = true,
-                                    enabled = true,
-                                    selectedBorderColor = MaterialTheme.colorScheme.primary,
-                                    selectedBorderWidth = 1.dp
-                                )
-                            )
-                        }
-                    }
-                }
 
                 // Main Squad Checklist
                 Box(
@@ -236,105 +208,132 @@ fun PlayingElevenScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         contentPadding = PaddingValues(top = 8.dp, bottom = 140.dp)
                     ) {
-                        items(state.allSquadPlayers, key = { it.id }) { player ->
+                        itemsIndexed(sortedPlayers, key = { _, it -> it.id }) { index, player ->
                             val isSelected = state.selectedPlayers.any { it.id == player.id }
                             val isRowEnabled = isSelected || !isLimitReached
 
-                            Row(
+                            val roleIcon = when (player.role) {
+                                "BOWLER" -> R.drawable.ic_red_bowl
+                                else -> R.drawable.ic_bat_bowl
+                            }
+
+                            val roleLabel = when (player.role) {
+                                "BATSMAN" -> "Batsman"
+                                "BOWLER" -> "Bowler"
+                                "WICKET_KEEPER" -> "WK Keeper"
+                                else -> "All-Rounder"
+                            }
+
+                            val roleColor = when (player.role) {
+                                "BATSMAN" -> Color(0xFF4A90D9)
+                                "BOWLER" -> Color(0xFFE74C3C)
+                                "WICKET_KEEPER" -> Color(0xFF9B59B6)
+                                else -> Color(0xFFF5A623)
+                            }
+
+                            Surface(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-                                    .border(
-                                        1.dp,
-                                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else BorderGray,
-                                        RoundedCornerShape(10.dp)
-                                    )
                                     .clickable(enabled = isRowEnabled) {
                                         viewModel.togglePlayerSelection(player)
-                                    }
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    },
+                                color = MaterialTheme.colorScheme.surface,
+                                shape = RoundedCornerShape(12.dp)
                             ) {
-                                Checkbox(
-                                    checked = isSelected,
-                                    onCheckedChange = { viewModel.togglePlayerSelection(player) },
-                                    enabled = isRowEnabled,
-                                    colors = CheckboxDefaults.colors(
-                                        checkedColor = MaterialTheme.colorScheme.primary,
-                                        uncheckedColor = TextGray
-                                    )
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-
-                                // Initial letter tag instead of Jersey tag
-                                val initial = player.playerName.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?"
-                                Box(
+                                Row(
                                     modifier = Modifier
-                                        .size(32.dp)
-                                        .background(OrangeTertiary.copy(alpha = 0.1f), CircleShape)
-                                        .border(1.dp, OrangeTertiary.copy(alpha = 0.4f), CircleShape),
-                                    contentAlignment = Alignment.Center
+                                        .padding(12.dp)
+                                        .fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
+                                    // Player Index Counter
                                     Text(
-                                        text = initial,
+                                        text = (index + 1).toString().padStart(2, '0'),
                                         fontFamily = BarlowCondensed,
-                                        fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp,
-                                        color = OrangeTertiary
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextGray.copy(alpha = 0.5f),
+                                        modifier = Modifier.width(28.dp)
                                     )
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
 
-                                // Player Info
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
+
+                                    // Category Icon
+                                    Image(
+                                        painter = painterResource(id = roleIcon),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(
+                                                MaterialTheme.colorScheme.background.copy(
+                                                    alpha = 0.5f
+                                                )
+                                            )
+                                            .padding(12.dp)
+                                    )
+
+                                    Spacer(modifier = Modifier.width(12.dp))
+
+                                    // Name and Role Tag
+                                    Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = player.playerName,
                                             fontFamily = DMSans,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp,
-                                            color = if (isRowEnabled) TextWhite else TextGray
+                                            fontSize = 15.sp,
+                                            color = if (isRowEnabled) TextWhite else TextGray,
+                                            maxLines = 1
                                         )
-                                        if (player.isCaptain) {
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text(
-                                                text = stringResource(id = R.string.captain_badge),
-                                                fontFamily = DMSans,
-                                                fontSize = 9.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = OrangeTertiary,
+
+                                        Spacer(modifier = Modifier.height(4.dp))
+
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            // Role Tag
+                                            Box(
                                                 modifier = Modifier
-                                                    .background(OrangeTertiary.copy(alpha = 0.1f), RoundedCornerShape(3.dp))
-                                                    .padding(horizontal = 4.dp, vertical = 2.dp)
-                                            )
+                                                    .background(
+                                                        roleColor.copy(alpha = 0.1f),
+                                                        RoundedCornerShape(12.dp)
+                                                    )
+                                                    .padding(horizontal = 9.dp)
+                                            ) {
+                                                Text(
+                                                    text = roleLabel.uppercase(),
+                                                    fontFamily = DMSans,
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = roleColor
+                                                )
+                                            }
+
+                                            if (player.isCaptain || player.isWicketKeeper) {
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                    if (player.isCaptain) BadgeIndicator(
+                                                        "C",
+                                                        OrangeTertiary
+                                                    )
+                                                    if (player.isWicketKeeper) BadgeIndicator(
+                                                        "WK",
+                                                        Color(0xFF9B59B6)
+                                                    )
+                                                }
+                                            }
                                         }
-                                        if (player.isWicketKeeper) {
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(
-                                                text = stringResource(id = R.string.wk_badge),
-                                                fontFamily = DMSans,
-                                                fontSize = 9.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF9B59B6),
-                                                modifier = Modifier
-                                                    .background(Color(0xFF9B59B6).copy(alpha = 0.1f), RoundedCornerShape(3.dp))
-                                                    .padding(horizontal = 4.dp, vertical = 2.dp)
-                                            )
-                                        }
+
+
                                     }
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = when (player.role) {
-                                            "BATSMAN" -> "Batsman"
-                                            "BOWLER" -> "Bowler"
-                                            "WICKET_KEEPER" -> "Wicket Keeper"
-                                            else -> "All-Rounder"
-                                        },
-                                        fontFamily = DMSans,
-                                        fontSize = 11.sp,
-                                        color = TextGray
+                                    // Selection Checkbox
+                                    Checkbox(
+                                        checked = isSelected,
+                                        onCheckedChange = { viewModel.togglePlayerSelection(player) },
+                                        enabled = isRowEnabled,
+                                        colors = CheckboxDefaults.colors(
+                                            checkedColor = MaterialTheme.colorScheme.primary,
+                                            uncheckedColor = TextGray
+                                        )
                                     )
+
                                 }
                             }
                         }
@@ -374,10 +373,18 @@ fun PlayingElevenScreen(
                         Button(
                             onClick = {
                                 if (state.allSquadPlayers.any { it.isCaptain } && !state.captainIncluded) {
-                                    Toast.makeText(context, "Note: Captain is not in selection", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Note: Captain is not in selection",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                                 if (!state.wicketKeeperIncluded) {
-                                    Toast.makeText(context, "Warning: No Wicket Keeper in selection", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Warning: No Wicket Keeper in selection",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                                 viewModel.confirmSelection()
                             },

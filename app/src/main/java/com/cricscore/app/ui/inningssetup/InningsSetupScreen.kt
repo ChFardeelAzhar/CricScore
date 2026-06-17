@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -207,13 +208,21 @@ fun InningsSetupScreen(
                         readOnly = true,
                         enabled = false,
                         label = { Text(text = stringResource(id = R.string.striker_facing_first)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showStrikerDialog) },
+                        trailingIcon = { 
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_play),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp).rotate(90f),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledTextColor = TextWhite,
                             disabledBorderColor = BorderGray,
-                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            disabledTrailingIconColor = MaterialTheme.colorScheme.primary
+                            disabledLabelColor = TextGray,
+                            disabledTrailingIconColor = MaterialTheme.colorScheme.primary,
+                            disabledContainerColor = Color.Transparent
                         )
                     )
                 }
@@ -243,13 +252,21 @@ fun InningsSetupScreen(
                         readOnly = true,
                         enabled = false,
                         label = { Text(text = stringResource(id = R.string.non_striker)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showNonStrikerDialog) },
+                        trailingIcon = { 
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_play),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp).rotate(90f),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledTextColor = TextWhite,
                             disabledBorderColor = BorderGray,
-                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            disabledTrailingIconColor = MaterialTheme.colorScheme.primary
+                            disabledLabelColor = TextGray,
+                            disabledTrailingIconColor = MaterialTheme.colorScheme.primary,
+                            disabledContainerColor = Color.Transparent
                         )
                     )
                 }
@@ -320,13 +337,21 @@ fun InningsSetupScreen(
                         readOnly = true,
                         enabled = false,
                         label = { Text(text = "Bowler Name") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showBowlerDialog) },
+                        trailingIcon = { 
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_play),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp).rotate(90f),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                            disabledTextColor = TextWhite,
                             disabledBorderColor = BorderGray,
-                            disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            disabledTrailingIconColor = MaterialTheme.colorScheme.primary
+                            disabledLabelColor = TextGray,
+                            disabledTrailingIconColor = MaterialTheme.colorScheme.primary,
+                            disabledContainerColor = Color.Transparent
                         )
                     )
                 }
