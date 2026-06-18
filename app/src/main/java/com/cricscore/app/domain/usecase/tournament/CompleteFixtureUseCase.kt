@@ -1,6 +1,7 @@
 package com.cricscore.app.domain.usecase.tournament
 
 import com.cricscore.app.domain.model.TournamentStatus
+import com.cricscore.app.domain.model.TournamentTeam
 import com.cricscore.app.domain.repository.InningsRepository
 import com.cricscore.app.domain.repository.MatchRepository
 import com.cricscore.app.domain.repository.TournamentRepository
@@ -12,6 +13,14 @@ class CompleteFixtureUseCase @Inject constructor(
     private val inningsRepository: InningsRepository,
     private val updatePlayerTournamentStatsUseCase: UpdatePlayerTournamentStatsUseCase
 ) {
+    private data class TeamStats(
+        val team: TournamentTeam,
+        val runs: Int,
+        val wickets: Int,
+        val ballsFaced: Int,
+        val ballsBowled: Int
+    )
+
     suspend fun execute(fixtureId: Long, matchId: Long) {
         val match = matchRepository.getMatchByIdSync(matchId) ?: return
         val innings1 = inningsRepository.getInningsByNumberSync(matchId, 1) ?: return
@@ -21,9 +30,61 @@ class CompleteFixtureUseCase @Inject constructor(
         val team1 = tournamentRepository.getTeamById(fixture.team1Id) ?: return
         val team2 = tournamentRepository.getTeamById(fixture.team2Id) ?: return
 
+        val tournament = tournamentRepository.getTournamentById(fixture.tournamentId) ?: return
+        val playersPerSide = tournament.playersPerSide
+        val maxOvers = tournament.oversPerMatch
+
+        // Identify which tournament team corresponds to which innings
+        val teamAStats = if (innings1.battingTeam == team1.teamName) {
+            // Team 1 batted first
+            val t1Runs = innings1.totalRuns
+            val t1Wickets = innings1.totalWickets
+            val t1BallsFaced = innings1.ballsBowled
+            val t1BallsBowled = innings2?.ballsBowled ?: 0
+            
+            // Effective balls for NRR: if all out, use full quota
+            val effBallsFaced = if (t1Wickets >= playersPerSide - 1) maxOvers * 6 else t1BallsFaced
+            val effBallsBowled = if (innings2 != null && innings2.totalWickets >= playersPerSide - 1) maxOvers * 6 else t1BallsBowled
+
+            TeamStats(team1, t1Runs, t1Wickets, effBallsFaced, effBallsBowled)
+        } else {
+            // Team 2 batted first
+            val t2Runs = innings1.totalRuns
+            val t2Wickets = innings1.totalWickets
+            val t2BallsFaced = innings1.ballsBowled
+            val t2BallsBowled = innings2?.ballsBowled ?: 0
+
+            val effBallsFaced = if (t2Wickets >= playersPerSide - 1) maxOvers * 6 else t2BallsFaced
+            val effBallsBowled = if (innings2 != null && innings2.totalWickets >= playersPerSide - 1) maxOvers * 6 else t2BallsBowled
+
+            TeamStats(team2, t2Runs, t2Wickets, effBallsFaced, effBallsBowled)
+        }
+
+        val teamBStats = if (innings1.battingTeam == team1.teamName) {
+            // Team 2 batted second
+            val t2Runs = innings2?.totalRuns ?: 0
+            val t2Wickets = innings2?.totalWickets ?: 0
+            val t2BallsFaced = innings2?.ballsBowled ?: 0
+            val t2BallsBowled = innings1.ballsBowled
+
+            val effBallsFaced = if (t2Wickets >= playersPerSide - 1) maxOvers * 6 else t2BallsFaced
+            val effBallsBowled = if (innings1.totalWickets >= playersPerSide - 1) maxOvers * 6 else t2BallsBowled
+
+            TeamStats(team2, t2Runs, t2Wickets, effBallsFaced, effBallsBowled)
+        } else {
+            // Team 1 batted second
+            val t1Runs = innings2?.totalRuns ?: 0
+            val t1Wickets = innings2?.totalWickets ?: 0
+            val t1BallsFaced = innings2?.ballsBowled ?: 0
+            val t1BallsBowled = innings1.ballsBowled
+
+            val effBallsFaced = if (t1Wickets >= playersPerSide - 1) maxOvers * 6 else t1BallsFaced
+            val effBallsBowled = if (innings1.totalWickets >= playersPerSide - 1) maxOvers * 6 else t1BallsBowled
+
+            TeamStats(team1, t1Runs, t1Wickets, effBallsFaced, effBallsBowled)
+        }
+
         // 1. Determine winner/loser/tie
-        val team1Runs = innings1.totalRuns
-        val team2Runs = innings2?.totalRuns ?: 0
         val isTied = match.isTied
         val winnerId = when {
             isTied -> -1L
@@ -68,40 +129,34 @@ class CompleteFixtureUseCase @Inject constructor(
             winnerId = winnerId,
             loserId = loserId,
             isTied = isTied,
-            team1Score = "${innings1.totalRuns}/${innings1.totalWickets}",
-            team2Score = innings2?.let { "${it.totalRuns}/${it.totalWickets}" } ?: "-",
-            team1Overs = oversDisplay(innings1.ballsBowled),
-            team2Overs = innings2?.let { oversDisplay(it.ballsBowled) } ?: "-",
+            team1Score = if (innings1.battingTeam == team1.teamName) "${innings1.totalRuns}/${innings1.totalWickets}" else innings2?.let { "${it.totalRuns}/${it.totalWickets}" } ?: "-",
+            team2Score = if (innings1.battingTeam == team2.teamName) "${innings1.totalRuns}/${innings1.totalWickets}" else innings2?.let { "${it.totalRuns}/${it.totalWickets}" } ?: "-",
+            team1Overs = if (innings1.battingTeam == team1.teamName) oversDisplay(innings1.ballsBowled) else innings2?.let { oversDisplay(it.ballsBowled) } ?: "-",
+            team2Overs = if (innings1.battingTeam == team2.teamName) oversDisplay(innings1.ballsBowled) else innings2?.let { oversDisplay(it.ballsBowled) } ?: "-",
             resultSummary = resultSummaryText,
             playedAt = System.currentTimeMillis()
         )
         tournamentRepository.updateFixture(updatedFixture)
 
         // 4. Update Points Table Stats
-        val tournament = tournamentRepository.getTournamentById(fixture.tournamentId) ?: return
-
+        
         // Update Team 1 Stats
-        val t1Played = team1.matchesPlayed + 1
-        val t1Won = team1.won + if (winnerId == team1.id) 1 else 0
-        val t1Lost = team1.lost + if (loserId == team1.id) 1 else 0
-        val t1Tied = team1.tied + if (isTied) 1 else 0
-        val t1Points = team1.points + when {
-            winnerId == team1.id -> tournament.pointsForWin
-            isTied -> tournament.pointsForTie
-            else -> tournament.pointsForLoss
-        }
-        val t1RunsFor = team1.runsFor + team1Runs
-        val t1RunsAgainst = team1.runsAgainst + team2Runs
-        val t1BallsFaced = team1.ballsFaced + (innings1.ballsBowled)
-        val t1BallsBowled = team1.ballsBowled + (innings2?.ballsBowled ?: 0)
+        val t1RunsFor = team1.runsFor + (if (team1.id == teamAStats.team.id) teamAStats.runs else teamBStats.runs)
+        val t1RunsAgainst = team1.runsAgainst + (if (team1.id == teamAStats.team.id) teamBStats.runs else teamAStats.runs)
+        val t1BallsFaced = team1.ballsFaced + (if (team1.id == teamAStats.team.id) teamAStats.ballsFaced else teamBStats.ballsFaced)
+        val t1BallsBowled = team1.ballsBowled + (if (team1.id == teamAStats.team.id) teamAStats.ballsBowled else teamBStats.ballsBowled)
         val t1Nrr = calculateNRR(t1RunsFor, t1BallsFaced, t1RunsAgainst, t1BallsBowled)
 
         val updatedTeam1 = team1.copy(
-            matchesPlayed = t1Played,
-            won = t1Won,
-            lost = t1Lost,
-            tied = t1Tied,
-            points = t1Points,
+            matchesPlayed = team1.matchesPlayed + 1,
+            won = team1.won + if (winnerId == team1.id) 1 else 0,
+            lost = team1.lost + if (loserId == team1.id) 1 else 0,
+            tied = team1.tied + if (isTied) 1 else 0,
+            points = team1.points + when {
+                winnerId == team1.id -> tournament.pointsForWin
+                isTied -> tournament.pointsForTie
+                else -> tournament.pointsForLoss
+            },
             runsFor = t1RunsFor,
             runsAgainst = t1RunsAgainst,
             ballsFaced = t1BallsFaced,
@@ -111,27 +166,22 @@ class CompleteFixtureUseCase @Inject constructor(
         tournamentRepository.updateTeam(updatedTeam1)
 
         // Update Team 2 Stats
-        val t2Played = team2.matchesPlayed + 1
-        val t2Won = team2.won + if (winnerId == team2.id) 1 else 0
-        val t2Lost = team2.lost + if (loserId == team2.id) 1 else 0
-        val t2Tied = team2.tied + if (isTied) 1 else 0
-        val t2Points = team2.points + when {
-            winnerId == team2.id -> tournament.pointsForWin
-            isTied -> tournament.pointsForTie
-            else -> tournament.pointsForLoss
-        }
-        val t2RunsFor = team2.runsFor + team2Runs
-        val t2RunsAgainst = team2.runsAgainst + team1Runs
-        val t2BallsFaced = team2.ballsFaced + (innings2?.ballsBowled ?: 0)
-        val t2BallsBowled = team2.ballsBowled + (innings1.ballsBowled)
+        val t2RunsFor = team2.runsFor + (if (team2.id == teamAStats.team.id) teamAStats.runs else teamBStats.runs)
+        val t2RunsAgainst = team2.runsAgainst + (if (team2.id == teamAStats.team.id) teamBStats.runs else teamAStats.runs)
+        val t2BallsFaced = team2.ballsFaced + (if (team2.id == teamAStats.team.id) teamAStats.ballsFaced else teamBStats.ballsFaced)
+        val t2BallsBowled = team2.ballsBowled + (if (team2.id == teamAStats.team.id) teamAStats.ballsBowled else teamBStats.ballsBowled)
         val t2Nrr = calculateNRR(t2RunsFor, t2BallsFaced, t2RunsAgainst, t2BallsBowled)
 
         val updatedTeam2 = team2.copy(
-            matchesPlayed = t2Played,
-            won = t2Won,
-            lost = t2Lost,
-            tied = t2Tied,
-            points = t2Points,
+            matchesPlayed = team2.matchesPlayed + 1,
+            won = team2.won + if (winnerId == team2.id) 1 else 0,
+            lost = team2.lost + if (loserId == team2.id) 1 else 0,
+            tied = team2.tied + if (isTied) 1 else 0,
+            points = team2.points + when {
+                winnerId == team2.id -> tournament.pointsForWin
+                isTied -> tournament.pointsForTie
+                else -> tournament.pointsForLoss
+            },
             runsFor = t2RunsFor,
             runsAgainst = t2RunsAgainst,
             ballsFaced = t2BallsFaced,
@@ -167,7 +217,12 @@ class CompleteFixtureUseCase @Inject constructor(
     }
 
     private fun calculateNRR(runsFor: Int, ballsFaced: Int, runsAgainst: Int, ballsBowled: Int): Double {
-        if (ballsFaced == 0 || ballsBowled == 0) return 0.0
-        return (runsFor.toDouble() / ballsFaced * 6.0) - (runsAgainst.toDouble() / ballsBowled * 6.0)
+        val oversFaced = ballsFaced / 6.0
+        val oversBowled = ballsBowled / 6.0
+        
+        val rateFor = if (oversFaced > 0) runsFor / oversFaced else 0.0
+        val rateAgainst = if (oversBowled > 0) runsAgainst / oversBowled else 0.0
+        
+        return rateFor - rateAgainst
     }
 }
