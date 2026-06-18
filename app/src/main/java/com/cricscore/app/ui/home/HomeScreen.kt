@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,7 +40,7 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onStartNewMatchClick: () -> Unit,
     onNavigateToTournaments: () -> Unit,
-    onNavigateToTournamentOverview: (Long) -> Unit,
+    onNavigateToTournamentMatches: (Long) -> Unit,
     onMatchClick: (Match) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -148,7 +149,7 @@ fun HomeScreen(
                     border = BorderStroke(1.dp, OrangeTertiary.copy(alpha = 0.4f)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onNavigateToTournamentOverview(tournament.id) }
+                        .clickable { onNavigateToTournamentMatches(tournament.id) }
                 ) {
                     Row(
                         modifier = Modifier
@@ -298,12 +299,15 @@ fun HomeScreen(
 
 
             } else {
+                val matchesToShow = remember(recentMatches, activeMatch) {
+                    recentMatches.filter { it.id != activeMatch?.id }
+                }
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
-                    items(recentMatches) { match ->
+                    items(matchesToShow, key = { it.id }) { match ->
                         RecentMatchItem(match = match, onClick = { onMatchClick(match) })
                     }
                 }

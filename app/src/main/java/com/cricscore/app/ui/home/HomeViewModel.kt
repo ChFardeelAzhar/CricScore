@@ -6,7 +6,7 @@ import com.cricscore.app.domain.model.Match
 import com.cricscore.app.domain.model.MatchStatus
 import com.cricscore.app.domain.model.Tournament
 import com.cricscore.app.domain.repository.TournamentRepository
-import com.cricscore.app.domain.usecase.GetRecentMatchesUseCase
+import com.cricscore.app.domain.usecase.GetStandaloneMatchesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,11 +16,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    getRecentMatchesUseCase: GetRecentMatchesUseCase,
+    getStandaloneMatchesUseCase: GetStandaloneMatchesUseCase,
     private val tournamentRepository: TournamentRepository
 ) : ViewModel() {
 
-    val recentMatches: StateFlow<List<Match>> = getRecentMatchesUseCase()
+    val recentMatches: StateFlow<List<Match>> = getStandaloneMatchesUseCase()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

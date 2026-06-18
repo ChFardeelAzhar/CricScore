@@ -18,6 +18,7 @@ data class MatchEntity(
     val winMarginRuns: Int,
     val winMarginWickets: Int,
     val isTied: Boolean,
+    val tournamentId: Long?,
     val createdAt: Long,
     val playerOfMatch: String?
 )
@@ -102,6 +103,7 @@ fun MatchEntity.toDomain() = Match(
     winMarginRuns = winMarginRuns,
     winMarginWickets = winMarginWickets,
     isTied = isTied,
+    tournamentId = tournamentId,
     createdAt = createdAt,
     playerOfMatch = playerOfMatch
 )
@@ -119,6 +121,7 @@ fun Match.toEntity() = MatchEntity(
     winMarginRuns = winMarginRuns,
     winMarginWickets = winMarginWickets,
     isTied = isTied,
+    tournamentId = tournamentId,
     createdAt = createdAt,
     playerOfMatch = playerOfMatch
 )

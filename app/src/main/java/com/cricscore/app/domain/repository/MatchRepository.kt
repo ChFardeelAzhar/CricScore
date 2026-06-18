@@ -9,4 +9,6 @@ interface MatchRepository {
     fun getMatchById(id: Long): Flow<Match?>
     suspend fun getMatchByIdSync(id: Long): Match?
     fun getRecentMatches(): Flow<List<Match>>
+    fun getStandaloneMatches(): Flow<List<Match>>
+    fun getTournamentMatches(tournamentId: Long): Flow<List<Match>>
 }
