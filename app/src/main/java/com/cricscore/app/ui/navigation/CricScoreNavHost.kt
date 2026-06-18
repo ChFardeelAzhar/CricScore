@@ -44,6 +44,8 @@ import com.cricscore.app.ui.tournament.squadmanagement.SquadManagementScreen
 import com.cricscore.app.ui.tournament.squadmanagement.SquadManagementViewModel
 import com.cricscore.app.ui.tournament.playingeleven.PlayingElevenScreen
 import com.cricscore.app.ui.tournament.playingeleven.PlayingElevenViewModel
+import com.cricscore.app.ui.tournament.matches.TournamentMatchesScreen
+import com.cricscore.app.ui.tournament.matches.TournamentMatchesViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -93,8 +95,8 @@ fun CricScoreNavHost(
                 onNavigateToTournaments = {
                     navController.navigate("tournament_list")
                 },
-                onNavigateToTournamentOverview = { tournamentId ->
-                    navController.navigate("tournament_overview/$tournamentId")
+                onNavigateToTournamentMatches = { tournamentId ->
+                    navController.navigate("tournament_matches/$tournamentId")
                 },
                 onMatchClick = { match ->
                     when (match.status) {
@@ -520,6 +522,42 @@ fun CricScoreNavHost(
                 tournamentId = tournamentId,
                 onBackClick = {
                     navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = "tournament_matches/{tournamentId}",
+            arguments = listOf(
+                navArgument("tournamentId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val tournamentId = backStackEntry.arguments?.getLong("tournamentId") ?: 0L
+            val viewModel: TournamentMatchesViewModel = hiltViewModel()
+            TournamentMatchesScreen(
+                viewModel = viewModel,
+                tournamentId = tournamentId,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onMatchClick = { match ->
+                    when (match.status) {
+                        MatchStatus.UPCOMING -> {
+                            navController.navigate("toss/${match.id}")
+                        }
+                        MatchStatus.FIRST_INNINGS -> {
+                            navController.navigate("scorecard/${match.id}/1/false")
+                        }
+                        MatchStatus.SECOND_INNINGS -> {
+                            navController.navigate("scorecard/${match.id}/2/false")
+                        }
+                        MatchStatus.COMPLETED -> {
+                            navController.navigate("scorecard/${match.id}/1/false")
+                        }
+                    }
+                },
+                onNavigateToDetails = { tId ->
+                    navController.navigate("tournament_overview/$tId")
                 }
             )
         }

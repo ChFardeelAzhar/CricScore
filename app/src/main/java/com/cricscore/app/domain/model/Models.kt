@@ -43,6 +43,7 @@ data class Match(
     val winMarginRuns: Int = 0,
     val winMarginWickets: Int = 0,
     val isTied: Boolean = false,
+    val tournamentId: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val playerOfMatch: String? = null
 )

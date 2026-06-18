@@ -19,7 +19,7 @@ import com.cricscore.app.data.local.entity.*
         TeamPlayerEntity::class,
         PlayingElevenEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class CricScoreDatabase : RoomDatabase() {

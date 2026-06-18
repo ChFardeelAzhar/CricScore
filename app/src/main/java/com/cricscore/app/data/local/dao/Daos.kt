@@ -20,6 +20,12 @@ interface MatchDao {
 
     @Query("SELECT * FROM matches ORDER BY createdAt DESC")
     fun getRecentMatches(): Flow<List<MatchEntity>>
+
+    @Query("SELECT * FROM matches WHERE tournamentId IS NULL ORDER BY createdAt DESC")
+    fun getStandaloneMatches(): Flow<List<MatchEntity>>
+
+    @Query("SELECT * FROM matches WHERE tournamentId = :tId ORDER BY createdAt DESC")
+    fun getTournamentMatches(tId: Long): Flow<List<MatchEntity>>
 }
 
 @Dao

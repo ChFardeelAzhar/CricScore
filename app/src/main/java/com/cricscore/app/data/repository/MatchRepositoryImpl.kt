@@ -34,4 +34,12 @@ class MatchRepositoryImpl @Inject constructor(
     override fun getRecentMatches(): Flow<List<Match>> {
         return matchDao.getRecentMatches().map { list -> list.map { it.toDomain() } }
     }
+
+    override fun getStandaloneMatches(): Flow<List<Match>> {
+        return matchDao.getStandaloneMatches().map { list -> list.map { it.toDomain() } }
+    }
+
+    override fun getTournamentMatches(tournamentId: Long): Flow<List<Match>> {
+        return matchDao.getTournamentMatches(tournamentId).map { list -> list.map { it.toDomain() } }
+    }
 }

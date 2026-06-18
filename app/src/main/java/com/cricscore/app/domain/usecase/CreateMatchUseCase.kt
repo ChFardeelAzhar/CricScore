@@ -7,12 +7,19 @@ import javax.inject.Inject
 class CreateMatchUseCase @Inject constructor(
     private val matchRepository: MatchRepository
 ) {
-    suspend operator fun invoke(team1: String, team2: String, oversLimit: Int, playersPerSide: Int): Long {
+    suspend operator fun invoke(
+        team1: String,
+        team2: String,
+        oversLimit: Int,
+        playersPerSide: Int,
+        tournamentId: Long? = null
+    ): Long {
         val match = Match(
             team1 = team1.trim(),
             team2 = team2.trim(),
             oversLimit = oversLimit,
-            playersPerSide = playersPerSide
+            playersPerSide = playersPerSide,
+            tournamentId = tournamentId
         )
         return matchRepository.createMatch(match)
     }

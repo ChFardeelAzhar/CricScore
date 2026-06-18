@@ -60,7 +60,8 @@ class TournamentOverviewViewModel @Inject constructor(
                 team2 = fixture.team2Name,
                 oversLimit = t.oversPerMatch,
                 playersPerSide = t.playersPerSide,
-                status = MatchStatus.UPCOMING
+                status = MatchStatus.UPCOMING,
+                tournamentId = t.id
             )
 
             val mId = matchRepository.createMatch(match)
