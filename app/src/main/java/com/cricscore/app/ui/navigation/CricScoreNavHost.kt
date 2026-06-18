@@ -309,7 +309,9 @@ fun CricScoreNavHost(
             TournamentListScreen(
                 viewModel = viewModel,
                 onBackClick = {
-                    navController.popBackStack()
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
                 },
                 onNavigateToCreate = {
                     navController.navigate("tournament_create")
